@@ -13,6 +13,9 @@ node_modules/
 # Testing
 coverage/
 *.log
+test-results/
+playwright-report/
+playwright/.cache/
 
 # Production
 build/

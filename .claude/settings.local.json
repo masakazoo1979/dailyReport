@@ -10,7 +10,9 @@
       "Bash(npm run format:*)",
       "Bash(npm run type-check:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: ESLintとPrettierのセットアップ\n\n- Next.js 14プロジェクトの初期化\n- ESLint 8とeslint-config-next 14をインストール\n- Prettier設定を追加\n- TypeScript設定（tsconfig.json）を作成\n- Next.js設定（next.config.js）を作成\n- 基本的なApp Routerディレクトリ構造を作成\n- .gitignoreに.nextを追加\n- Prettierでマークダウンファイルを整形\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm test:*)",
+      "Bash(npx playwright install chromium)"
     ]
   }
 }
