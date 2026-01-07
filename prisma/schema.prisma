@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 営業マスタ
+model Sales {
+  salesId    Int      @id @default(autoincrement()) @map("sales_id")
+  salesName  String   @map("sales_name") @db.VarChar(100)
+  email      String   @unique @db.VarChar(255)
+  password   String   @db.VarChar(255)
+  department String   @db.VarChar(100)
+  role       String   @db.VarChar(20) // "一般" or "上長"
+  managerId  Int?     @map("manager_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  manager         Sales?        @relation("SalesManager", fields: [managerId], references: [salesId], onDelete: SetNull)
+  subordinates    Sales[]       @relation("SalesManager")
+  dailyReports    DailyReport[] @relation("SalesReports")
+  approvedReports DailyReport[] @relation("ApprovedReports")
+  comments        Comment[]
+
+  @@index([managerId])
+  @@index([email])
+  @@map("sales")
+}
+
+// 顧客マスタ
+model Customer {
+  customerId   Int      @id @default(autoincrement()) @map("customer_id")
+  customerName String   @map("customer_name") @db.VarChar(100)
+  companyName  String   @map("company_name") @db.VarChar(255)
+  industry     String?  @db.VarChar(50)
+  phone        String?  @db.VarChar(20)
+  email        String?  @db.VarChar(255)
+  address      String?  @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  visits Visit[]
+
+  @@index([companyName])
+  @@index([industry])
+  @@map("customers")
+}
+
+// 日報
+model DailyReport {
+  reportId    Int       @id @default(autoincrement()) @map("report_id")
+  salesId     Int       @map("sales_id")
+  reportDate  DateTime  @map("report_date") @db.Date
+  problem     String?   @db.Text
+  plan        String?   @db.Text
+  status      String    @db.VarChar(20) // "下書き", "提出済み", "承認済み", "差し戻し"
+  submittedAt DateTime? @map("submitted_at")
+  approvedAt  DateTime? @map("approved_at")
+  approvedBy  Int?      @map("approved_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // リレーション
+  sales    Sales     @relation("SalesReports", fields: [salesId], references: [salesId], onDelete: Cascade)
+  approver Sales?    @relation("ApprovedReports", fields: [approvedBy], references: [salesId], onDelete: SetNull)
+  visits   Visit[]
+  comments Comment[]
+
+  @@unique([salesId, reportDate]) // 1営業担当者につき1日1件のみ
+  @@index([salesId])
+  @@index([reportDate])
+  @@index([status])
+  @@index([approvedBy])
+  @@map("daily_reports")
+}
+
+// 訪問記録
+model Visit {
+  visitId      Int      @id @default(autoincrement()) @map("visit_id")
+  reportId     Int      @map("report_id")
+  customerId   Int      @map("customer_id")
+  visitContent String   @map("visit_content") @db.Text
+  visitTime    DateTime @map("visit_time") @db.Time
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  dailyReport DailyReport @relation(fields: [reportId], references: [reportId], onDelete: Cascade)
+  customer    Customer    @relation(fields: [customerId], references: [customerId], onDelete: Restrict)
+
+  @@index([reportId])
+  @@index([customerId])
+  @@map("visits")
+}
+
+// コメント
+model Comment {
+  commentId      Int      @id @default(autoincrement()) @map("comment_id")
+  reportId       Int      @map("report_id")
+  salesId        Int      @map("sales_id")
+  commentContent String   @map("comment_content") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  dailyReport DailyReport @relation(fields: [reportId], references: [reportId], onDelete: Cascade)
+  sales       Sales       @relation(fields: [salesId], references: [salesId], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([salesId])
+  @@map("comments")
+}
