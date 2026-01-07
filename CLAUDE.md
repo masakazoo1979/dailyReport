@@ -21,6 +21,7 @@
 ### 主要機能
 
 #### 1. 日報管理
+
 - **日報登録・編集**: 営業担当者が日々の活動を記録
 - **ステータス管理**: 下書き → 提出済み → 承認済み/差し戻し
 - **承認フロー**: 上長による承認・差し戻し機能
@@ -28,19 +29,23 @@
 - **明日の予定**: 翌日の活動予定を記録
 
 #### 2. 訪問記録管理
+
 - **複数訪問記録**: 1日に複数の訪問記録を登録可能
 - **訪問詳細**: 訪問時刻、訪問先顧客、訪問内容を記録
 - **顧客紐付け**: 顧客マスタと連携
 
 #### 3. コメント機能
+
 - **フィードバック**: 上長や同僚がコメントを投稿
 - **双方向コミュニケーション**: 日報に対する質問や助言
 
 #### 4. マスタ管理
+
 - **顧客マスタ**: 訪問先顧客の情報管理（会社名、担当者、業種等）
 - **営業マスタ**: 営業担当者の情報管理（上長のみアクセス可）
 
 #### 5. 権限管理
+
 - **一般営業**: 自分の日報の作成・編集・閲覧
 - **上長**: 配下メンバーの日報閲覧・承認・差し戻し、営業マスタ管理
 
@@ -57,6 +62,7 @@
 ## 技術スタック
 
 ### フロントエンド
+
 - **言語**: TypeScript
 - **フレームワーク**: Next.js 14 (App Router)
 - **UIコンポーネント**: shadcn/ui + Tailwind CSS
@@ -65,23 +71,27 @@
 - **バリデーション**: Zod
 
 ### バックエンド
+
 - **ランタイム**: Node.js
 - **API**: Next.js API Routes / Server Actions
 - **APIスキーマ定義**: OpenAPI (Zodによる検証)
 - **認証**: NextAuth.js (セッションベース)
 
 ### データベース
+
 - **DBMS**: PostgreSQL 16
 - **ORM**: Prisma
 - **マイグレーション**: Prisma Migrate
 - **スキーマ定義**: Prisma Schema
 
 ### テスト
+
 - **テストフレームワーク**: Vitest
 - **E2Eテスト**: Playwright (推奨)
 - **APIテスト**: Vitest + MSW (Mock Service Worker)
 
 ### インフラ・デプロイ
+
 - **コンテナ**: Docker
 - **クラウド**: Google Cloud Platform
 - **デプロイ先**: Google Cloud Run
@@ -89,6 +99,7 @@
 - **データベースホスティング**: Cloud SQL for PostgreSQL
 
 ### 開発ツール
+
 - **パッケージマネージャー**: npm / yarn / pnpm
 - **リンター**: ESLint
 - **フォーマッター**: Prettier
@@ -103,29 +114,31 @@
 
 ### 設計ドキュメント
 
-| ドキュメント | ファイル名 | 説明 |
-|------------|-----------|------|
-| ER図 | [ER-diagram.md](./doc/ER-diagram.md) | データベース設計のER図（Mermaid形式） |
-| 画面定義書 | [screen-specification.md](./doc/screen-specification.md) | 全9画面の詳細仕様、レイアウト、バリデーション |
-| 画面遷移図 | [screen-transition.md](./doc/screen-transition.md) | 画面間の遷移フロー（Mermaid形式） |
-| API仕様書 | [api-specification.md](./doc/api-specification.md) | RESTful APIの詳細仕様 |
-| テスト仕様書 | [test-specification.md](./doc/test-specification.md) | 203件のテストケース定義 |
+| ドキュメント | ファイル名                                               | 説明                                          |
+| ------------ | -------------------------------------------------------- | --------------------------------------------- |
+| ER図         | [ER-diagram.md](./doc/ER-diagram.md)                     | データベース設計のER図（Mermaid形式）         |
+| 画面定義書   | [screen-specification.md](./doc/screen-specification.md) | 全9画面の詳細仕様、レイアウト、バリデーション |
+| 画面遷移図   | [screen-transition.md](./doc/screen-transition.md)       | 画面間の遷移フロー（Mermaid形式）             |
+| API仕様書    | [api-specification.md](./doc/api-specification.md)       | RESTful APIの詳細仕様                         |
+| テスト仕様書 | [test-specification.md](./doc/test-specification.md)     | 203件のテストケース定義                       |
 
 ### 開発ドキュメント
 
-| ドキュメント | ファイル名 | 説明 |
-|------------|-----------|------|
-| データベースセットアップ | [database-setup.md](./doc/database-setup.md) | Prisma・PostgreSQLのセットアップガイド |
-| Prismaスキーマ | [prisma/schema.prisma](./prisma/schema.prisma) | データベーススキーマ定義 |
+| ドキュメント             | ファイル名                                     | 説明                                   |
+| ------------------------ | ---------------------------------------------- | -------------------------------------- |
+| データベースセットアップ | [database-setup.md](./doc/database-setup.md)   | Prisma・PostgreSQLのセットアップガイド |
+| Prismaスキーマ           | [prisma/schema.prisma](./prisma/schema.prisma) | データベーススキーマ定義               |
 
 ### 設計ドキュメントの概要
 
 #### ER図 (ER-diagram.md)
+
 - 5つのテーブル定義: Sales, Customer, DailyReport, Visit, Comment
 - リレーションシップの明確化
 - データ型とカラム定義
 
 #### 画面定義書 (screen-specification.md)
+
 - 9画面の詳細仕様
   - ログイン画面
   - ダッシュボード
@@ -140,6 +153,7 @@
 - 非機能要件
 
 #### 画面遷移図 (screen-transition.md)
+
 - 全体画面遷移図
 - 役割別画面遷移（一般営業・上長）
 - 日報ワークフロー図
@@ -147,6 +161,7 @@
 - データ受け渡し仕様
 
 #### API仕様書 (api-specification.md)
+
 - 6つのリソースグループ
   - 認証API (4エンドポイント)
   - 日報API (8エンドポイント)
@@ -160,6 +175,7 @@
 - 認証・セキュリティ仕様
 
 #### テスト仕様書 (test-specification.md)
+
 - 合計203件のテストケース
 - テストレベル: 単体/結合/システム/受け入れ
 - テストタイプ: 機能/UI/API/権限/バリデーション/セキュリティ/パフォーマンス/互換性
@@ -391,14 +407,17 @@ npm run test:e2e
 ### テストの種類
 
 #### 単体テスト (Unit Tests)
+
 - コンポーネント、関数、ユーティリティのテスト
 - Vitestを使用
 
 #### 結合テスト (Integration Tests)
+
 - API、データベース連携のテスト
 - Vitest + Prismaを使用
 
 #### E2Eテスト (End-to-End Tests)
+
 - ユーザーシナリオのテスト
 - Playwrightを使用
 
@@ -505,6 +524,7 @@ chore: ビルド・設定変更
 ```
 
 例：
+
 ```
 feat: 日報承認機能を追加
 fix: 日報一覧の表示バグを修正
@@ -573,9 +593,9 @@ npx prisma generate
 
 ## 改訂履歴
 
-| 版数 | 改訂日 | 改訂内容 | 作成者 |
-|------|--------|---------|--------|
-| 1.0 | 2024/01/06 | 初版作成 | - |
+| 版数 | 改訂日     | 改訂内容 | 作成者 |
+| ---- | ---------- | -------- | ------ |
+| 1.0  | 2024/01/06 | 初版作成 | -      |
 
 ---
 

@@ -18,6 +18,7 @@ coverage/
 build/
 dist/
 out/
+.next/
 
 # Misc
 .DS_Store

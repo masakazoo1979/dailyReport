@@ -57,6 +57,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/daily_report?schema=
 ```
 
 **接続文字列の形式:**
+
 ```
 postgresql://[ユーザー名]:[パスワード]@[ホスト]:[ポート]/[データベース名]?schema=public
 ```
@@ -81,6 +82,7 @@ npx prisma migrate dev --name init
 ```
 
 このコマンドにより：
+
 1. `prisma/migrations` ディレクトリにマイグレーションファイルが作成される
 2. データベースにテーブルが作成される
 3. Prisma Clientが最新のスキーマで再生成される
@@ -108,13 +110,13 @@ npx prisma studio
 
 ### テーブル一覧
 
-| テーブル名 | 説明 |
-|-----------|------|
-| sales | 営業担当者マスタ |
-| customers | 顧客マスタ |
-| daily_reports | 日報 |
-| visits | 訪問記録 |
-| comments | コメント |
+| テーブル名    | 説明             |
+| ------------- | ---------------- |
+| sales         | 営業担当者マスタ |
+| customers     | 顧客マスタ       |
+| daily_reports | 日報             |
+| visits        | 訪問記録         |
+| comments      | コメント         |
 
 ### リレーション
 
@@ -137,22 +139,22 @@ DailyReport (日報)
 ### 基本的な使い方
 
 ```typescript
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 // 日報の取得
 const reports = await prisma.dailyReport.findMany({
   where: {
     salesId: 1,
-    status: '提出済み'
+    status: '提出済み',
   },
   include: {
     visits: true,
     comments: true,
-    sales: true
-  }
-})
+    sales: true,
+  },
+});
 
 // 日報の作成
 const newReport = await prisma.dailyReport.create({
@@ -167,30 +169,30 @@ const newReport = await prisma.dailyReport.create({
         {
           customerId: 10,
           visitTime: new Date('2024-01-06T09:00:00'),
-          visitContent: '新規提案の説明を実施'
-        }
-      ]
-    }
-  }
-})
+          visitContent: '新規提案の説明を実施',
+        },
+      ],
+    },
+  },
+});
 
 // トランザクション
 await prisma.$transaction(async (tx) => {
   // 日報のステータスを更新
   await tx.dailyReport.update({
     where: { reportId: 1 },
-    data: { status: '承認済み', approvedAt: new Date() }
-  })
+    data: { status: '承認済み', approvedAt: new Date() },
+  });
 
   // コメントを追加
   await tx.comment.create({
     data: {
       reportId: 1,
       salesId: 5,
-      commentContent: '承認しました'
-    }
-  })
-})
+      commentContent: '承認しました',
+    },
+  });
+});
 ```
 
 ## 開発時の便利なコマンド
@@ -245,14 +247,14 @@ npx prisma generate
 `prisma/seed.ts` ファイルを作成：
 
 ```typescript
-import { PrismaClient } from '@prisma/client'
-import * as bcrypt from 'bcrypt'
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
   // パスワードをハッシュ化
-  const hashedPassword = await bcrypt.hash('password123', 10)
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
   // 上長ユーザーを作成
   const manager = await prisma.sales.create({
@@ -261,9 +263,9 @@ async function main() {
       email: 'manager@example.com',
       password: hashedPassword,
       department: '営業1部',
-      role: '上長'
-    }
-  })
+      role: '上長',
+    },
+  });
 
   // 一般営業ユーザーを作成
   const sales = await prisma.sales.create({
@@ -273,9 +275,9 @@ async function main() {
       password: hashedPassword,
       department: '営業1部',
       role: '一般',
-      managerId: manager.salesId
-    }
-  })
+      managerId: manager.salesId,
+    },
+  });
 
   // 顧客を作成
   const customer = await prisma.customer.create({
@@ -284,21 +286,21 @@ async function main() {
       companyName: 'ABC株式会社',
       industry: 'IT',
       phone: '03-1234-5678',
-      email: 'suzuki@abc.co.jp'
-    }
-  })
+      email: 'suzuki@abc.co.jp',
+    },
+  });
 
-  console.log({ manager, sales, customer })
+  console.log({ manager, sales, customer });
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });
 ```
 
 `package.json` に追加：
@@ -351,6 +353,7 @@ npm install
 ### 環境変数の設定
 
 本番環境では、安全な方法でDATABASE_URLを設定：
+
 - 環境変数として設定
 - シークレット管理サービスを使用（AWS Secrets Manager, Azure Key Vault等）
 
@@ -368,7 +371,7 @@ npx prisma migrate deploy
 本番環境では接続プーリングを使用することを推奨：
 
 ```typescript
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -376,9 +379,9 @@ const prisma = new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
-})
+});
 
-export default prisma
+export default prisma;
 ```
 
 ## セキュリティベストプラクティス
@@ -405,6 +408,6 @@ export default prisma
 
 ## 改訂履歴
 
-| 版数 | 改訂日 | 改訂内容 | 作成者 |
-|------|--------|---------|--------|
-| 1.0 | 2024/01/06 | 初版作成 | - |
+| 版数 | 改訂日     | 改訂内容 | 作成者 |
+| ---- | ---------- | -------- | ------ |
+| 1.0  | 2024/01/06 | 初版作成 | -      |
