@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { AUTH_CONSTANTS } from "../constants/auth";
 
 /**
  * パスワードをハッシュ化する
@@ -6,8 +7,7 @@ import bcrypt from "bcryptjs";
  * @returns ハッシュ化されたパスワード
  */
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 10;
-  return bcrypt.hash(password, saltRounds);
+  return bcrypt.hash(password, AUTH_CONSTANTS.SALT_ROUNDS);
 }
 
 /**

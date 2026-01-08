@@ -3,6 +3,13 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import { verifyPassword } from "./auth/password";
 import { loginSchema } from "./validations/auth";
+import { AUTH_CONSTANTS } from "./constants/auth";
+import { validateEnv } from "./env";
+import { isRateLimited, resetRateLimit } from "./auth/rate-limit";
+import { logLoginSuccess, logLoginFailed } from "./auth/audit-log";
+
+// 環境変数を検証
+validateEnv();
 
 /**
  * NextAuth.jsのセッション型を拡張
@@ -64,29 +71,50 @@ export const {
 
           const { email, password } = validatedFields.data;
 
+          // レート制限チェック
+          if (isRateLimited(email)) {
+            console.warn(`Rate limit exceeded for email: ${email}`);
+            return null;
+          }
+
           // ユーザーを取得
           const user = await prisma.sales.findUnique({
             where: { email },
-            include: {
-              manager: {
-                select: {
-                  salesId: true,
-                  salesName: true,
-                },
-              },
+            select: {
+              salesId: true,
+              salesName: true,
+              email: true,
+              password: true,
+              department: true,
+              role: true,
+              managerId: true,
             },
           });
 
-          if (!user) {
+          // タイミング攻撃対策: ユーザーが存在しない場合もダミーハッシュで検証
+          const hashedPassword = user?.password ?? AUTH_CONSTANTS.DUMMY_PASSWORD_HASH;
+          const isPasswordValid = await verifyPassword(password, hashedPassword);
+
+          // ユーザーが存在しない、またはパスワードが無効な場合
+          if (!user || !isPasswordValid) {
+            // 監査ログに失敗を記録
+            // 注: IPアドレスとユーザーエージェントはCredentialsProviderからは取得できない
+            await logLoginFailed(email, !user ? "USER_NOT_FOUND" : "INVALID_PASSWORD");
             return null;
           }
 
-          // パスワード検証
-          const isPasswordValid = await verifyPassword(password, user.password);
-
-          if (!isPasswordValid) {
+          // 役割の検証
+          if (user.role !== "一般" && user.role !== "上長") {
+            console.error(`Invalid role for user ${user.email}: ${user.role}`);
+            await logLoginFailed(email, "INVALID_ROLE");
             return null;
           }
+
+          // 監査ログに成功を記録
+          await logLoginSuccess(email);
+
+          // ログイン成功時はレート制限をリセット
+          resetRateLimit(email);
 
           // ユーザー情報を返す
           return {
@@ -95,7 +123,7 @@ export const {
             salesName: user.salesName,
             email: user.email,
             department: user.department,
-            role: user.role as "一般" | "上長",
+            role: user.role,
             managerId: user.managerId,
           };
         } catch (error) {
@@ -107,7 +135,8 @@ export const {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30日
+    maxAge: AUTH_CONSTANTS.SESSION_MAX_AGE_SECONDS,
+    updateAge: AUTH_CONSTANTS.SESSION_UPDATE_AGE_SECONDS,
   },
   pages: {
     signIn: "/login",

@@ -118,3 +118,19 @@ model Comment {
   @@index([salesId])
   @@map("comments")
 }
+
+// 監査ログ
+model AuditLog {
+  auditId   Int      @id @default(autoincrement()) @map("audit_id")
+  action    String   @db.VarChar(50) // "LOGIN_SUCCESS", "LOGIN_FAILED", etc.
+  email     String?  @db.VarChar(255)
+  ipAddress String?  @map("ip_address") @db.VarChar(45) // IPv6対応
+  userAgent String?  @map("user_agent") @db.Text
+  details   String?  @db.Text // JSON形式の追加詳細情報
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
