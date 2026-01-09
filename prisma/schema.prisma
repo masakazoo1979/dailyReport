@@ -132,5 +132,8 @@ model AuditLog {
   @@index([email])
   @@index([action])
   @@index([createdAt])
+  @@index([email, action]) // メールとアクションの組み合わせ検索用
+  @@index([email, createdAt]) // メールと時系列での検索用
+  @@index([action, createdAt]) // アクションと時系列での検索用
   @@map("audit_logs")
 }

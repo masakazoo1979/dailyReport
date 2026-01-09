@@ -16,6 +16,7 @@ const rateLimitStore = new Map<string, RateLimitAttempt>();
 
 /**
  * 期限切れのエントリをクリーンアップ
+ * オンデマンドで実行されるため、定期実行は不要
  */
 function cleanupExpiredEntries(): void {
   const now = Date.now();
@@ -26,46 +27,50 @@ function cleanupExpiredEntries(): void {
   }
 }
 
-// 定期的にクリーンアップを実行（5分ごと）
-if (typeof setInterval !== "undefined") {
-  setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
-}
-
 /**
  * レート制限をチェックする
  * @param identifier - 識別子（通常はメールアドレスまたはIPアドレス）
  * @returns レート制限を超えている場合true
  */
 export function isRateLimited(identifier: string): boolean {
+  // 期限切れエントリのクリーンアップ（オンデマンド実行）
+  cleanupExpiredEntries();
+
   const now = Date.now();
   const attempt = rateLimitStore.get(identifier);
 
   if (!attempt) {
-    // 初回試行
-    rateLimitStore.set(identifier, {
-      count: 1,
-      resetAt: now + AUTH_CONSTANTS.RATE_LIMIT_WINDOW_MS,
-    });
+    // 初回試行 - まだ記録なし
     return false;
   }
 
   if (now > attempt.resetAt) {
     // ウィンドウがリセットされた
+    return false;
+  }
+
+  // 現在のカウントをチェック（インクリメントしない）
+  return attempt.count >= AUTH_CONSTANTS.RATE_LIMIT_MAX_REQUESTS;
+}
+
+/**
+ * レート制限のカウントをインクリメントする（ログイン失敗時に呼ぶ）
+ * @param identifier - 識別子
+ */
+export function incrementRateLimit(identifier: string): void {
+  const now = Date.now();
+  const attempt = rateLimitStore.get(identifier);
+
+  if (!attempt || now > attempt.resetAt) {
+    // 初回または期限切れ - 新しいウィンドウを開始
     rateLimitStore.set(identifier, {
       count: 1,
       resetAt: now + AUTH_CONSTANTS.RATE_LIMIT_WINDOW_MS,
     });
-    return false;
+  } else {
+    // ウィンドウ内でカウント増加
+    attempt.count++;
   }
-
-  // ウィンドウ内で試行回数をインクリメント
-  attempt.count++;
-
-  if (attempt.count > AUTH_CONSTANTS.RATE_LIMIT_MAX_REQUESTS) {
-    return true;
-  }
-
-  return false;
 }
 
 /**

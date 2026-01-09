@@ -5,8 +5,8 @@ import { verifyPassword } from "./auth/password";
 import { loginSchema } from "./validations/auth";
 import { AUTH_CONSTANTS } from "./constants/auth";
 import { validateEnv } from "./env";
-import { isRateLimited, resetRateLimit } from "./auth/rate-limit";
-import { logLoginSuccess, logLoginFailed } from "./auth/audit-log";
+import { isRateLimited, incrementRateLimit, resetRateLimit } from "./auth/rate-limit";
+import { logLoginSuccess, logLoginFailed, logAudit, AuditAction } from "./auth/audit-log";
 
 // 環境変数を検証
 validateEnv();
@@ -61,6 +61,7 @@ export const {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        let email: string | undefined;
         try {
           // バリデーション
           const validatedFields = loginSchema.safeParse(credentials);
@@ -69,11 +70,16 @@ export const {
             return null;
           }
 
-          const { email, password } = validatedFields.data;
+          email = validatedFields.data.email;
+          const password = validatedFields.data.password;
 
           // レート制限チェック
           if (isRateLimited(email)) {
             console.warn(`Rate limit exceeded for email: ${email}`);
+            await logAudit({
+              action: AuditAction.RATE_LIMIT_EXCEEDED,
+              email,
+            });
             return null;
           }
 
@@ -100,6 +106,8 @@ export const {
             // 監査ログに失敗を記録
             // 注: IPアドレスとユーザーエージェントはCredentialsProviderからは取得できない
             await logLoginFailed(email, !user ? "USER_NOT_FOUND" : "INVALID_PASSWORD");
+            // レート制限カウントをインクリメント
+            incrementRateLimit(email);
             return null;
           }
 
@@ -107,6 +115,8 @@ export const {
           if (user.role !== "一般" && user.role !== "上長") {
             console.error(`Invalid role for user ${user.email}: ${user.role}`);
             await logLoginFailed(email, "INVALID_ROLE");
+            // レート制限カウントをインクリメント
+            incrementRateLimit(email);
             return null;
           }
 
@@ -128,6 +138,13 @@ export const {
           };
         } catch (error) {
           console.error("Authorization error:", error);
+          // 例外が発生した場合も監査ログに記録
+          if (email) {
+            await logLoginFailed(email, "SYSTEM_ERROR").catch(() => {
+              // 監査ログの記録失敗は無視
+            });
+            incrementRateLimit(email);
+          }
           return null;
         }
       },

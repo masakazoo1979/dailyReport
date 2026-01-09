@@ -22,8 +22,9 @@ export const AUTH_CONSTANTS = {
   /**
    * タイミング攻撃対策用のダミーハッシュ
    * ユーザーが存在しない場合でも処理時間を均一化するために使用
+   * これは "dummy-password-for-timing-attack-protection" のbcryptハッシュ（salt rounds: 10）
    */
-  DUMMY_PASSWORD_HASH: "$2a$10$dummyhashforobfuscationtimingattackprotection",
+  DUMMY_PASSWORD_HASH: "$2b$10$vzHn13er.3J7S4l3sF8zpO45Npkj31BXWq9sDJqsgqac5iQwYXo4W",
 
   /**
    * レート制限 - 時間ウィンドウ（ミリ秒）
