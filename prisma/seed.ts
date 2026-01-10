@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -139,7 +139,7 @@ async function main() {
   console.log('📝 Creating daily reports...');
 
   // 下書き状態の日報
-  const report1 = await prisma.dailyReport.create({
+  await prisma.dailyReport.create({
     data: {
       salesId: sales1.salesId,
       reportDate: new Date('2024-01-05'),
