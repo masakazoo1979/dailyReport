@@ -5,14 +5,13 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { User } from '@/types';
+import { logoutAction } from '@/app/actions/auth';
 
 export interface MainLayoutProps {
   /** Current user information */
   user: User | null;
   /** Page content */
   children: React.ReactNode;
-  /** Callback when logout is clicked */
-  onLogout?: () => void;
 }
 
 /**
@@ -28,9 +27,11 @@ export interface MainLayoutProps {
  * - Desktop: Fixed sidebar (256px) + Header + Content
  * - Mobile: Header with hamburger menu + Sheet for navigation
  *
+ * Uses Server Actions for logout to avoid passing event handlers from Server Components
+ *
  * Based on doc/screen-specification.md common specifications
  */
-export function MainLayout({ user, children, onLogout }: MainLayoutProps) {
+export function MainLayout({ user, children }: MainLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleMobileMenuToggle = () => {
@@ -39,6 +40,16 @@ export function MainLayout({ user, children, onLogout }: MainLayoutProps) {
 
   const handleMobileNavigate = () => {
     setMobileMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutAction();
+    } catch (error) {
+      // Server Actions handle redirects by throwing,
+      // so we catch and ignore the error
+      console.error('Logout error:', error);
+    }
   };
 
   if (!user) {
@@ -57,7 +68,7 @@ export function MainLayout({ user, children, onLogout }: MainLayoutProps) {
       {/* Header */}
       <Header
         user={user}
-        onLogout={onLogout}
+        onLogout={handleLogout}
         onMenuClick={handleMobileMenuToggle}
         showMobileMenu={true}
       />

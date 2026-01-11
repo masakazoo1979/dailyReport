@@ -12,6 +12,9 @@ export const metadata: Metadata = {
  * Layout for authenticated dashboard pages
  * Uses MainLayout component (Header + Sidebar + Content)
  *
+ * MainLayout handles logout internally using Server Actions,
+ * so no event handlers need to be passed from this Server Component.
+ *
  * Based on doc/screen-specification.md common layout specifications
  *
  * TODO: Implement proper authentication check
@@ -39,17 +42,5 @@ export default function DashboardLayout({
     managerId: null,
   };
 
-  const handleLogout = async () => {
-    // TODO: Implement actual logout logic
-    // - Call NextAuth signOut()
-    // - Clear session
-    // - Redirect to login
-    console.log('Logout clicked');
-  };
-
-  return (
-    <MainLayout user={mockUser} onLogout={handleLogout}>
-      {children}
-    </MainLayout>
-  );
+  return <MainLayout user={mockUser}>{children}</MainLayout>;
 }
