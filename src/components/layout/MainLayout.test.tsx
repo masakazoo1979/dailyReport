@@ -7,6 +7,13 @@ import { User } from '@/types';
 // Mock Next.js router
 vi.mock('next/navigation', () => ({
   usePathname: () => '/dashboard',
+  redirect: vi.fn(),
+}));
+
+// Mock auth actions
+const mockLogoutAction = vi.fn();
+vi.mock('@/app/actions/auth', () => ({
+  logoutAction: () => mockLogoutAction(),
 }));
 
 describe('MainLayout', () => {
@@ -49,12 +56,11 @@ describe('MainLayout', () => {
     expect(screen.getByTestId('child-content')).toBeInTheDocument();
   });
 
-  it('calls onLogout when logout is clicked', async () => {
+  it('calls logoutAction when logout is clicked', async () => {
     const user = userEvent.setup();
-    const onLogout = vi.fn();
 
     render(
-      <MainLayout user={mockUser} onLogout={onLogout}>
+      <MainLayout user={mockUser}>
         <div>Content</div>
       </MainLayout>
     );
@@ -67,7 +73,7 @@ describe('MainLayout', () => {
     const logoutButton = screen.getByText('ログアウト');
     await user.click(logoutButton);
 
-    expect(onLogout).toHaveBeenCalledTimes(1);
+    expect(mockLogoutAction).toHaveBeenCalledTimes(1);
   });
 
   it('shows loading state when no user', () => {
