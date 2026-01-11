@@ -1,12 +1,21 @@
-import NextAuth, { type DefaultSession } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "./prisma";
-import { verifyPassword } from "./auth/password";
-import { loginSchema } from "./validations/auth";
-import { AUTH_CONSTANTS } from "./constants/auth";
-import { validateEnv } from "./env";
-import { isRateLimited, incrementRateLimit, resetRateLimit } from "./auth/rate-limit";
-import { logLoginSuccess, logLoginFailed, logAudit, AuditAction } from "./auth/audit-log";
+import NextAuth, { type DefaultSession } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { prisma } from './prisma';
+import { verifyPassword } from './auth/password';
+import { loginSchema } from './validations/auth';
+import { AUTH_CONSTANTS } from './constants/auth';
+import { validateEnv } from './env';
+import {
+  isRateLimited,
+  incrementRateLimit,
+  resetRateLimit,
+} from './auth/rate-limit';
+import {
+  logLoginSuccess,
+  logLoginFailed,
+  logAudit,
+  AuditAction,
+} from './auth/audit-log';
 
 // 環境変数を検証
 validateEnv();
@@ -14,16 +23,16 @@ validateEnv();
 /**
  * NextAuth.jsのセッション型を拡張
  */
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
     user: {
       salesId: number;
       salesName: string;
       email: string;
       department: string;
-      role: "一般" | "上長";
+      role: '一般' | '上長';
       managerId: number | null;
-    } & DefaultSession["user"];
+    } & DefaultSession['user'];
   }
 
   interface User {
@@ -31,21 +40,12 @@ declare module "next-auth" {
     salesName: string;
     email: string;
     department: string;
-    role: "一般" | "上長";
+    role: '一般' | '上長';
     managerId: number | null;
   }
 }
 
-declare module "@auth/core/jwt" {
-  interface JWT {
-    salesId: number;
-    salesName: string;
-    email: string;
-    department: string;
-    role: "一般" | "上長";
-    managerId: number | null;
-  }
-}
+// Note: JWT type augmentation removed as it's not available in NextAuth v5 beta
 
 export const {
   handlers: { GET, POST },
@@ -55,10 +55,10 @@ export const {
 } = NextAuth({
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         let email: string | undefined;
@@ -98,23 +98,30 @@ export const {
           });
 
           // タイミング攻撃対策: ユーザーが存在しない場合もダミーハッシュで検証
-          const hashedPassword = user?.password ?? AUTH_CONSTANTS.DUMMY_PASSWORD_HASH;
-          const isPasswordValid = await verifyPassword(password, hashedPassword);
+          const hashedPassword =
+            user?.password ?? AUTH_CONSTANTS.DUMMY_PASSWORD_HASH;
+          const isPasswordValid = await verifyPassword(
+            password,
+            hashedPassword
+          );
 
           // ユーザーが存在しない、またはパスワードが無効な場合
           if (!user || !isPasswordValid) {
             // 監査ログに失敗を記録
             // 注: IPアドレスとユーザーエージェントはCredentialsProviderからは取得できない
-            await logLoginFailed(email, !user ? "USER_NOT_FOUND" : "INVALID_PASSWORD");
+            await logLoginFailed(
+              email,
+              !user ? 'USER_NOT_FOUND' : 'INVALID_PASSWORD'
+            );
             // レート制限カウントをインクリメント
             incrementRateLimit(email);
             return null;
           }
 
           // 役割の検証
-          if (user.role !== "一般" && user.role !== "上長") {
+          if (user.role !== '一般' && user.role !== '上長') {
             console.error(`Invalid role for user ${user.email}: ${user.role}`);
-            await logLoginFailed(email, "INVALID_ROLE");
+            await logLoginFailed(email, 'INVALID_ROLE');
             // レート制限カウントをインクリメント
             incrementRateLimit(email);
             return null;
@@ -137,10 +144,10 @@ export const {
             managerId: user.managerId,
           };
         } catch (error) {
-          console.error("Authorization error:", error);
+          console.error('Authorization error:', error);
           // 例外が発生した場合も監査ログに記録
           if (email) {
-            await logLoginFailed(email, "SYSTEM_ERROR").catch(() => {
+            await logLoginFailed(email, 'SYSTEM_ERROR').catch(() => {
               // 監査ログの記録失敗は無視
             });
             incrementRateLimit(email);
@@ -151,14 +158,14 @@ export const {
     }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
     maxAge: AUTH_CONSTANTS.SESSION_MAX_AGE_SECONDS,
     updateAge: AUTH_CONSTANTS.SESSION_UPDATE_AGE_SECONDS,
   },
   pages: {
-    signIn: "/login",
-    signOut: "/login",
-    error: "/login",
+    signIn: '/login',
+    signOut: '/login',
+    error: '/login',
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -174,12 +181,12 @@ export const {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.salesId = token.salesId;
-        session.user.salesName = token.salesName;
-        session.user.email = token.email;
-        session.user.department = token.department;
-        session.user.role = token.role;
-        session.user.managerId = token.managerId;
+        session.user.salesId = token.salesId as number;
+        session.user.salesName = token.salesName as string;
+        session.user.email = token.email as string;
+        session.user.department = token.department as string;
+        session.user.role = token.role as '一般' | '上長';
+        session.user.managerId = token.managerId as number | null;
       }
       return session;
     },
