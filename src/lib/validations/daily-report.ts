@@ -168,3 +168,32 @@ export const dailyReportResponseSchema = z.object({
 });
 
 export type DailyReportResponse = z.infer<typeof dailyReportResponseSchema>;
+
+/**
+ * コメント投稿スキーマ
+ *
+ * 画面項目:
+ * - コメント内容（必須、1000文字以内）
+ */
+export const commentSchema = z.object({
+  commentContent: z
+    .string()
+    .min(1, 'コメント内容を入力してください') // E-017
+    .max(1000, 'コメントは1000文字以内で入力してください'), // E-018
+});
+
+export type CommentInput = z.infer<typeof commentSchema>;
+
+/**
+ * コメントレスポンススキーマ
+ */
+export const commentResponseSchema = z.object({
+  commentId: z.number(),
+  reportId: z.number(),
+  salesId: z.number(),
+  salesName: z.string(),
+  commentContent: z.string(),
+  createdAt: z.string(),
+});
+
+export type CommentResponse = z.infer<typeof commentResponseSchema>;
