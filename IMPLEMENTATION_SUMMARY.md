@@ -1,48 +1,217 @@
-# Dashboard Implementation Summary - Issue #7
+# Issue #10: 日報編集画面の実装 - 実装サマリー
 
-## Status
+## 実装概要
 
-✅ COMPLETED - Dashboard screen fully implemented
+日報編集画面（画面05）を実装しました。既存の日報データを取得し、ステータスに応じて編集可否を制御する機能を含みます。
 
-## Files Created/Modified
+## 実装内容
 
-### Created Files:
+### 1. 新規作成ファイル
 
-1. src/types/dashboard.ts - Type definitions
-2. src/components/features/dashboard/StatsCard.tsx
-3. src/components/features/dashboard/TodayReportCard.tsx
-4. src/components/features/dashboard/RecentReportsList.tsx
-5. src/components/features/dashboard/PendingApprovalList.tsx
-6. src/components/features/dashboard/index.ts
-7. src/lib/mock-dashboard-data.ts
-8. DASHBOARD_IMPLEMENTATION.md
+#### `src/app/(dashboard)/reports/[id]/edit/page.tsx`
 
-### Modified Files:
+- 日報編集画面のメインページコンポーネント
+- サーバーコンポーネントとして実装（データフェッチを含む）
+- 以下の機能を実装:
+  - 日報IDからデータ取得
+  - ステータスによる編集可否判定
+  - 編集不可の場合のエラー表示
+  - DailyReportFormコンポーネントへのデータ受け渡し
 
-1. src/types/index.ts - Added dashboard exports
-2. src/app/(dashboard)/dashboard/page.tsx - Full implementation
+### 2. 追加した機能
 
-## Features Implemented
+#### `src/app/actions/daily-reports.ts`
 
-✅ Statistics cards (submitted, approved, visits)
-✅ Today's report card with quick actions
-✅ Recent reports list (5 items)
-✅ Pending approval list (manager only)
-✅ Role-based content display
-✅ Responsive design
-✅ Accessibility compliant
+- `getDailyReportById()` サーバーアクションを追加
+  - 日報IDから詳細データを取得
+  - 権限チェック（自分の日報のみ閲覧可能）
+  - 訪問記録を含む完全なデータ取得
+  - visitTimeをHH:MM形式の文字列に変換
 
-## Code Quality
+### 3. コピーしたファイル
 
-✅ TypeScript: No errors
-✅ ESLint: No warnings
-✅ Follows project patterns
+以下のファイルをissue-009からissue-010にコピー:
 
-## Ready For
+- `src/types/daily-report.ts` - 日報関連の型定義
+- `src/lib/validations/daily-report.ts` - Zodバリデーションスキーマ
+- `src/components/features/daily-reports/DailyReportForm.tsx` - 日報フォームコンポーネント
+- `src/app/actions/daily-reports.ts` - 日報関連サーバーアクション（getDailyReportByIdを追加）
+- `src/app/actions/customers.ts` - 顧客関連サーバーアクション
 
-- Backend integration
-- Authentication integration
-- Database connection
-- E2E testing
+### 4. 修正した機能
 
-See DASHBOARD_IMPLEMENTATION.md for detailed documentation.
+#### `src/components/features/daily-reports/DailyReportForm.tsx`
+
+- `handleCancel()` メソッドを修正
+  - 編集モードの場合: 詳細画面に戻る
+  - 新規登録モードの場合: 一覧画面に戻る
+
+## 実装仕様
+
+### 編集制御ロジック
+
+ステータスによる編集可否:
+
+- **編集可能**: `下書き`、`差し戻し`
+- **編集不可**: `提出済み`、`承認済み`
+
+編集不可の場合、エラーメッセージを表示し、フォームは表示されません。
+
+### データフロー
+
+1. URLパラメータから日報IDを取得
+2. `getDailyReportById()` サーバーアクションで日報データを取得
+3. ステータスをチェックして編集可否を判定
+4. 編集可能な場合、`DailyReportForm` コンポーネントにデータを渡す
+5. フォーム送信時、`updateDraftDailyReport()` または `updateAndSubmitDailyReport()` を実行
+
+### 画面遷移
+
+- **遷移元**:
+  - S-003 日報一覧画面の「編集」ボタン
+  - S-002 ダッシュボードの日報カードの「編集」ボタン
+
+- **遷移先**:
+  - 保存/提出成功時: `/dashboard/reports` (日報一覧画面)
+  - キャンセル時: `/dashboard/reports/[id]` (日報詳細画面)
+
+## 画面項目とバリデーション
+
+### 画面項目 (screen-specification.md S-004準拠)
+
+- **DR-001**: 報告日 (編集時は表示のみ、変更不可)
+- **DR-002**: ステータス (表示のみ)
+- **DR-003**: 訪問記録一覧
+- **DR-004**: 訪問記録追加ボタン
+- **DR-005**: 訪問時刻 (HH:MM形式、必須)
+- **DR-006**: 顧客 (セレクトボックス、必須)
+- **DR-007**: 訪問内容 (テキストエリア、1000文字以内、必須)
+- **DR-008**: 課題・相談 (テキストエリア、2000文字以内、任意)
+- **DR-009**: 明日の予定 (テキストエリア、2000文字以内、任意)
+- **DR-010**: 下書き保存ボタン
+- **DR-011**: 提出ボタン (訪問記録1件以上必須)
+- **DR-012**: キャンセルボタン
+
+### バリデーション
+
+- 報告日: 必須、YYYY-MM-DD形式
+- 訪問時刻: 必須、HH:MM形式
+- 顧客: 必須
+- 訪問内容: 必須、1000文字以内
+- 課題・相談: 2000文字以内
+- 明日の予定: 2000文字以内
+- 提出時: 訪問記録1件以上必須
+
+## 技術的な実装ポイント
+
+### 1. サーバーコンポーネントの活用
+
+- ページコンポーネントをサーバーコンポーネントとして実装
+- データフェッチをサーバー側で実行し、クライアントに最小限のデータを送信
+- SEO最適化とパフォーマンス向上
+
+### 2. 型安全性の確保
+
+- Zodスキーマによるランタイムバリデーション
+- TypeScript型定義による静的型チェック
+- Prismaから生成された型を活用
+
+### 3. ユーザー体験の向上
+
+- 編集不可の場合は明確なエラーメッセージを表示
+- フォーム送信中はボタンを無効化
+- 適切な画面遷移（編集後は詳細画面に戻る）
+
+### 4. セキュリティ
+
+- 認証チェック（セッション確認）
+- 権限チェック（自分の日報のみ編集可能）
+- ステータスチェック（編集可能なステータスのみ）
+
+## テスト観点
+
+実装完了後、以下をテストしてください:
+
+### 機能テスト
+
+- [ ] 下書き状態の日報を編集できる
+- [ ] 差し戻し状態の日報を編集できる
+- [ ] 提出済み状態の日報は編集できない（エラー表示）
+- [ ] 承認済み状態の日報は編集できない（エラー表示）
+- [ ] 訪問記録の追加・削除ができる
+- [ ] 下書き保存が正常に動作する
+- [ ] 提出（再提出）が正常に動作する
+- [ ] キャンセル時に詳細画面に戻る
+
+### バリデーションテスト
+
+- [ ] 各項目のバリデーションが正しく動作する
+- [ ] 提出時に訪問記録1件以上のチェックが動作する
+- [ ] エラーメッセージが正しく表示される
+
+### 権限テスト
+
+- [ ] 他人の日報は編集できない
+- [ ] 未認証の場合はアクセスできない
+
+### UI/UXテスト
+
+- [ ] レスポンシブデザインが正しく動作する
+- [ ] フォーム送信中のローディング状態が表示される
+- [ ] アクセシビリティ要件を満たしている（WCAG 2.1 AA）
+
+## ビルド結果
+
+TypeScriptコンパイルは成功しました。
+
+```
+✓ Compiled successfully
+Linting and checking validity of types ...
+```
+
+環境変数の設定が必要ですが、コード自体は正常にコンパイルされています。
+
+## 次のステップ
+
+1. 日報詳細画面（S-005）に「編集」ボタンを追加
+2. 日報一覧画面（S-003）に「編集」ボタンを追加
+3. ダッシュボード（S-002）の日報カードに「編集」ボタンを追加
+4. 実際のデータベースを使用した統合テスト
+5. E2Eテストの作成
+
+## ファイル構成
+
+```
+issue-010/
+├── src/
+│   ├── app/
+│   │   ├── (dashboard)/
+│   │   │   └── reports/
+│   │   │       └── [id]/
+│   │   │           └── edit/
+│   │   │               └── page.tsx         # 日報編集画面 (新規作成)
+│   │   └── actions/
+│   │       ├── daily-reports.ts            # getDailyReportById追加
+│   │       └── customers.ts                # コピー
+│   ├── components/
+│   │   └── features/
+│   │       └── daily-reports/
+│   │           └── DailyReportForm.tsx     # handleCancel修正
+│   ├── lib/
+│   │   └── validations/
+│   │       └── daily-report.ts             # コピー
+│   └── types/
+│       └── daily-report.ts                 # コピー
+└── IMPLEMENTATION_SUMMARY.md               # 本ファイル
+```
+
+## 参考ドキュメント
+
+- `doc/screen-specification.md` - 画面05（日報編集画面）
+- `doc/api-specification.md` - 日報API仕様
+- `doc/screen-transition.md` - 画面遷移仕様
+
+---
+
+**実装完了日**: 2026-01-12
+**実装者**: Claude Code
