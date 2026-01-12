@@ -233,7 +233,7 @@ export function DailyReportForm({
    * キャンセル
    */
   const handleCancel = () => {
-    router.push('/dashboard/reports');
+    router.push('/reports');
   };
 
   return (

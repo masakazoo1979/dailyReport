@@ -22,7 +22,9 @@ export const visitRecordSchema = z.object({
       invalid_type_error: '顧客を選択してください', // E-011
     })
     .int()
-    .positive('顧客を選択してください'), // E-011
+    .refine((val) => val > 0, {
+      message: '顧客を選択してください', // E-011
+    }),
   visitContent: z
     .string()
     .min(1, '訪問内容を入力してください') // E-012
