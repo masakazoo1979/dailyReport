@@ -56,3 +56,10 @@ prisma/*.db-journal
 
 # Experimental/WIP directories
 issue-6/
+
+# Claude Code
+.claude/agents/
+.claude/commands/
+
+# Reviews
+doc/reviews/
