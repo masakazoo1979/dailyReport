@@ -87,7 +87,7 @@ export function TodayReportCard({ report, className }: TodayReportCardProps) {
         <div className="flex gap-2">
           {!hasReport ? (
             <Button asChild className="w-full" size="sm">
-              <Link href="/dashboard/reports/new">
+              <Link href="/reports/new">
                 <Plus className="h-4 w-4" />
                 日報を作成
               </Link>
@@ -95,13 +95,13 @@ export function TodayReportCard({ report, className }: TodayReportCardProps) {
           ) : canEdit ? (
             <>
               <Button asChild variant="outline" className="flex-1" size="sm">
-                <Link href={`/dashboard/reports/${report.reportId}`}>
+                <Link href={`/reports/${report.reportId}`}>
                   <FileText className="h-4 w-4" />
                   詳細
                 </Link>
               </Button>
               <Button asChild className="flex-1" size="sm">
-                <Link href={`/dashboard/reports/${report.reportId}/edit`}>
+                <Link href={`/reports/${report.reportId}/edit`}>
                   <Edit className="h-4 w-4" />
                   編集
                 </Link>
@@ -109,7 +109,7 @@ export function TodayReportCard({ report, className }: TodayReportCardProps) {
             </>
           ) : (
             <Button asChild variant="outline" className="w-full" size="sm">
-              <Link href={`/dashboard/reports/${report.reportId}`}>
+              <Link href={`/reports/${report.reportId}`}>
                 <FileText className="h-4 w-4" />
                 詳細を見る
               </Link>

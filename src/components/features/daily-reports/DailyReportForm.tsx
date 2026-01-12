@@ -233,13 +233,9 @@ export function DailyReportForm({
    * キャンセル
    */
   const handleCancel = () => {
-    if (isEditMode && existingReport) {
-      // 編集モードの場合は詳細画面に戻る
-      router.push(`/dashboard/reports/${existingReport.reportId}`);
-    } else {
-      // 新規登録の場合は一覧画面へ
-      router.push('/dashboard/reports');
-    }
+    // 一覧画面へ遷移
+    // 注: 日報詳細画面（S-005）が未実装のため、編集モード・新規登録モード共に一覧に戻る
+    router.push('/reports');
   };
 
   return (

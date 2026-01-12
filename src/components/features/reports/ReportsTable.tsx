@@ -108,7 +108,7 @@ export function ReportsTable({
       params.set('order', 'desc');
     }
 
-    router.push(`/dashboard/reports?${params.toString()}`);
+    router.push(`/reports?${params.toString()}`);
   };
 
   /**
@@ -131,7 +131,7 @@ export function ReportsTable({
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams);
     params.set('page', String(newPage));
-    router.push(`/dashboard/reports?${params.toString()}`);
+    router.push(`/reports?${params.toString()}`);
   };
 
   /**
@@ -271,9 +271,7 @@ export function ReportsTable({
                   {/* 操作 */}
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">
-                      <Link href={`/dashboard/reports/${report.report_id}`}>
-                        詳細
-                      </Link>
+                      <Link href={`/reports/${report.report_id}`}>詳細</Link>
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -57,7 +57,7 @@ export default async function ReportsListPage({
 
         {/* R-007: 新規日報作成ボタン (営業担当者のみ) */}
         <Button asChild>
-          <Link href="/dashboard/reports/new">
+          <Link href="/reports/new">
             <PlusCircle className="mr-2 h-4 w-4" />
             新規日報作成
           </Link>

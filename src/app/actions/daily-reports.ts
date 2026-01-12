@@ -101,7 +101,7 @@ export async function saveDraftDailyReport(formData: FormData) {
     });
 
     // キャッシュ再検証
-    revalidatePath('/dashboard/reports');
+    revalidatePath('/reports');
     revalidatePath('/dashboard');
 
     return {
@@ -210,7 +210,7 @@ export async function submitDailyReport(formData: FormData) {
     });
 
     // キャッシュ再検証
-    revalidatePath('/dashboard/reports');
+    revalidatePath('/reports');
     revalidatePath('/dashboard');
 
     return {
@@ -320,9 +320,9 @@ export async function updateDraftDailyReport(
     });
 
     // キャッシュ再検証
-    revalidatePath('/dashboard/reports');
+    revalidatePath('/reports');
     revalidatePath('/dashboard');
-    revalidatePath(`/dashboard/reports/${reportId}`);
+    revalidatePath(`/reports/${reportId}`);
 
     return {
       success: true,
@@ -434,9 +434,9 @@ export async function updateAndSubmitDailyReport(
     });
 
     // キャッシュ再検証
-    revalidatePath('/dashboard/reports');
+    revalidatePath('/reports');
     revalidatePath('/dashboard');
-    revalidatePath(`/dashboard/reports/${reportId}`);
+    revalidatePath(`/reports/${reportId}`);
 
     return {
       success: true,

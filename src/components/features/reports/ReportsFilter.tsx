@@ -109,7 +109,7 @@ export function ReportsFilter({
     params.set('page', '1');
 
     // Navigate with new filters
-    router.push(`/dashboard/reports?${params.toString()}`);
+    router.push(`/reports?${params.toString()}`);
   };
 
   /**
@@ -125,7 +125,7 @@ export function ReportsFilter({
     });
 
     // Navigate to page without filters
-    router.push('/dashboard/reports');
+    router.push('/reports');
   };
 
   return (

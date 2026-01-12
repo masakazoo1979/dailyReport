@@ -25,19 +25,19 @@ export const navigationItems: NavigationItem[] = [
   },
   {
     label: '日報一覧',
-    href: '/dashboard/reports',
+    href: '/reports',
     icon: FileText,
     roles: ['一般', '上長'],
   },
   {
     label: '日報登録',
-    href: '/dashboard/reports/new',
+    href: '/reports/new',
     icon: FilePlus,
     roles: ['一般', '上長'],
   },
   {
     label: '承認待ち日報',
-    href: '/dashboard/reports/pending',
+    href: '/reports/pending',
     icon: CheckSquare,
     roles: ['上長'], // 上長のみ
   },

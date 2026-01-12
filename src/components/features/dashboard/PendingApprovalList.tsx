@@ -53,7 +53,7 @@ function formatRelativeTime(dateString: string): string {
 function PendingReportItem({ report }: { report: PendingReport }) {
   return (
     <Link
-      href={`/dashboard/reports/${report.reportId}`}
+      href={`/reports/${report.reportId}`}
       className="block border-b last:border-b-0 pb-3 last:pb-0 hover:bg-accent/50 transition-colors rounded-md px-3 py-2 -mx-3"
     >
       <div className="flex items-center justify-between gap-4">
@@ -132,7 +132,7 @@ export function PendingApprovalList({
                 className="w-full mt-4"
                 size="sm"
               >
-                <Link href="/dashboard/reports?status=提出済み">
+                <Link href="/reports?status=提出済み">
                   すべて見る ({reports.length}件)
                   <ChevronRight className="h-4 w-4" />
                 </Link>

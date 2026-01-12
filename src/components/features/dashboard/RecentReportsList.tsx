@@ -62,7 +62,7 @@ function RecentReportItem({
 }) {
   return (
     <Link
-      href={`/dashboard/reports/${report.reportId}`}
+      href={`/reports/${report.reportId}`}
       className="block border-b last:border-b-0 pb-3 last:pb-0 hover:bg-accent/50 transition-colors rounded-md px-3 py-2 -mx-3"
     >
       <div className="flex items-center justify-between gap-4">
@@ -117,7 +117,7 @@ export function RecentReportsList({
           最近の日報
         </CardTitle>
         <Button asChild variant="ghost" size="sm">
-          <Link href="/dashboard/reports">
+          <Link href="/reports">
             すべて見る
             <ChevronRight className="h-4 w-4" />
           </Link>
