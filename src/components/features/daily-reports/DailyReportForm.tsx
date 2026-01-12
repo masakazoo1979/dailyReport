@@ -168,7 +168,7 @@ export function DailyReportForm({
         setServerError(result.error);
       } else {
         // 成功時は一覧画面へ遷移
-        router.push('/dashboard/reports');
+        router.push('/reports');
       }
     } catch (error) {
       console.error('Save draft error:', error);
@@ -217,7 +217,7 @@ export function DailyReportForm({
         setServerError(result.error);
       } else {
         // 成功時は一覧画面へ遷移
-        router.push('/dashboard/reports');
+        router.push('/reports');
       }
     } catch (error) {
       console.error('Submit report error:', error);

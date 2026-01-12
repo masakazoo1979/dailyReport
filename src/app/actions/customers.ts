@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 import { CustomerOption } from '@/types/daily-report';
 
 /**
@@ -16,6 +17,15 @@ export async function getCustomersForSelect(): Promise<{
   error?: string;
 }> {
   try {
+    // 認証チェック
+    const session = await auth();
+    if (!session?.user?.salesId) {
+      return {
+        success: false,
+        error: '認証エラーです。再度ログインしてください。',
+      };
+    }
+
     const customers = await prisma.customer.findMany({
       select: {
         customerId: true,

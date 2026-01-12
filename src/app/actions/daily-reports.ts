@@ -34,8 +34,11 @@ export async function saveDraftDailyReport(formData: FormData) {
     let visits = [];
     try {
       visits = visitsJson ? JSON.parse(visitsJson) : [];
-    } catch {
-      visits = [];
+    } catch (error) {
+      console.error('Failed to parse visits JSON:', error);
+      return {
+        error: '訪問記録のデータ形式が正しくありません',
+      };
     }
 
     // バリデーション（下書きは訪問記録なしでもOK）
@@ -53,52 +56,74 @@ export async function saveDraftDailyReport(formData: FormData) {
       };
     }
 
-    // 同日の日報重複チェック
-    const existingReport = await prisma.dailyReport.findUnique({
-      where: {
-        salesId_reportDate: {
-          salesId: session.user.salesId,
-          reportDate: new Date(validatedFields.data.reportDate),
-        },
-      },
-    });
-
-    if (existingReport) {
-      return {
-        error: '同じ日付の日報が既に存在します', // E-008
-      };
-    }
-
     // トランザクション: 日報作成 + 訪問記録作成
-    const dailyReport = await prisma.$transaction(async (tx) => {
-      // 日報作成
-      const report = await tx.dailyReport.create({
-        data: {
-          salesId: session.user.salesId,
-          reportDate: new Date(validatedFields.data.reportDate),
-          problem: validatedFields.data.problem,
-          plan: validatedFields.data.plan,
-          status: '下書き',
-        },
-      });
-
-      // 訪問記録作成
-      if (validatedFields.data.visits.length > 0) {
-        await tx.visit.createMany({
-          data: validatedFields.data.visits.map((visit) => ({
-            reportId: report.reportId,
-            customerId: visit.customerId,
-            visitTime: visit.visitTime,
-            visitContent: visit.visitContent,
-          })),
+    const dailyReport = await prisma.$transaction(
+      async (tx) => {
+        // トランザクション内で重複チェック
+        const existingReport = await tx.dailyReport.findUnique({
+          where: {
+            salesId_reportDate: {
+              salesId: session.user.salesId,
+              reportDate: new Date(validatedFields.data.reportDate),
+            },
+          },
         });
-      }
 
-      return report;
-    });
+        if (existingReport) {
+          throw new Error('REPORT_DUPLICATE');
+        }
+
+        // 訪問記録の顧客IDを検証
+        if (validatedFields.data.visits.length > 0) {
+          const customerIds = [
+            ...new Set(validatedFields.data.visits.map((v) => v.customerId)),
+          ];
+
+          const existingCustomers = await tx.customer.findMany({
+            where: {
+              customerId: { in: customerIds },
+            },
+            select: { customerId: true },
+          });
+
+          if (existingCustomers.length !== customerIds.length) {
+            throw new Error('INVALID_CUSTOMER_ID');
+          }
+        }
+
+        // 日報作成
+        const report = await tx.dailyReport.create({
+          data: {
+            salesId: session.user.salesId,
+            reportDate: new Date(validatedFields.data.reportDate),
+            problem: validatedFields.data.problem,
+            plan: validatedFields.data.plan,
+            status: '下書き',
+          },
+        });
+
+        // 訪問記録作成
+        if (validatedFields.data.visits.length > 0) {
+          await tx.visit.createMany({
+            data: validatedFields.data.visits.map((visit) => ({
+              reportId: report.reportId,
+              customerId: visit.customerId,
+              visitTime: visit.visitTime,
+              visitContent: visit.visitContent,
+            })),
+          });
+        }
+
+        return report;
+      },
+      {
+        isolationLevel: 'Serializable',
+        timeout: 10000,
+      }
+    );
 
     // キャッシュ再検証
-    revalidatePath('/dashboard/reports');
+    revalidatePath('/reports');
     revalidatePath('/dashboard');
 
     return {
@@ -107,6 +132,22 @@ export async function saveDraftDailyReport(formData: FormData) {
     };
   } catch (error) {
     console.error('Failed to save draft daily report:', error);
+
+    // エラーの詳細なハンドリング
+    if (error instanceof Error) {
+      if (error.message === 'REPORT_DUPLICATE') {
+        return {
+          error: '同じ日付の日報が既に存在します', // E-008
+        };
+      }
+      if (error.message === 'INVALID_CUSTOMER_ID') {
+        return {
+          error:
+            '選択された顧客が存在しません。ページを再読み込みしてください。',
+        };
+      }
+    }
+
     return {
       error: 'システムエラーが発生しました。管理者にお問い合わせください。',
     };
@@ -139,8 +180,11 @@ export async function submitDailyReport(formData: FormData) {
     let visits = [];
     try {
       visits = visitsJson ? JSON.parse(visitsJson) : [];
-    } catch {
-      visits = [];
+    } catch (error) {
+      console.error('Failed to parse visits JSON:', error);
+      return {
+        error: '訪問記録のデータ形式が正しくありません',
+      };
     }
 
     // バリデーション（提出は訪問記録1件以上必須）
@@ -158,53 +202,75 @@ export async function submitDailyReport(formData: FormData) {
       };
     }
 
-    // 同日の日報重複チェック
-    const existingReport = await prisma.dailyReport.findUnique({
-      where: {
-        salesId_reportDate: {
-          salesId: session.user.salesId,
-          reportDate: new Date(validatedFields.data.reportDate),
-        },
-      },
-    });
-
-    if (existingReport) {
-      return {
-        error: '同じ日付の日報が既に存在します', // E-008
-      };
-    }
-
     // トランザクション: 日報作成 + 訪問記録作成
-    const dailyReport = await prisma.$transaction(async (tx) => {
-      // 日報作成
-      const report = await tx.dailyReport.create({
-        data: {
-          salesId: session.user.salesId,
-          reportDate: new Date(validatedFields.data.reportDate),
-          problem: validatedFields.data.problem,
-          plan: validatedFields.data.plan,
-          status: '提出済み',
-          submittedAt: new Date(),
-        },
-      });
-
-      // 訪問記録作成
-      if (validatedFields.data.visits.length > 0) {
-        await tx.visit.createMany({
-          data: validatedFields.data.visits.map((visit) => ({
-            reportId: report.reportId,
-            customerId: visit.customerId,
-            visitTime: visit.visitTime,
-            visitContent: visit.visitContent,
-          })),
+    const dailyReport = await prisma.$transaction(
+      async (tx) => {
+        // トランザクション内で重複チェック
+        const existingReport = await tx.dailyReport.findUnique({
+          where: {
+            salesId_reportDate: {
+              salesId: session.user.salesId,
+              reportDate: new Date(validatedFields.data.reportDate),
+            },
+          },
         });
-      }
 
-      return report;
-    });
+        if (existingReport) {
+          throw new Error('REPORT_DUPLICATE');
+        }
+
+        // 訪問記録の顧客IDを検証
+        if (validatedFields.data.visits.length > 0) {
+          const customerIds = [
+            ...new Set(validatedFields.data.visits.map((v) => v.customerId)),
+          ];
+
+          const existingCustomers = await tx.customer.findMany({
+            where: {
+              customerId: { in: customerIds },
+            },
+            select: { customerId: true },
+          });
+
+          if (existingCustomers.length !== customerIds.length) {
+            throw new Error('INVALID_CUSTOMER_ID');
+          }
+        }
+
+        // 日報作成
+        const report = await tx.dailyReport.create({
+          data: {
+            salesId: session.user.salesId,
+            reportDate: new Date(validatedFields.data.reportDate),
+            problem: validatedFields.data.problem,
+            plan: validatedFields.data.plan,
+            status: '提出済み',
+            submittedAt: new Date(),
+          },
+        });
+
+        // 訪問記録作成
+        if (validatedFields.data.visits.length > 0) {
+          await tx.visit.createMany({
+            data: validatedFields.data.visits.map((visit) => ({
+              reportId: report.reportId,
+              customerId: visit.customerId,
+              visitTime: visit.visitTime,
+              visitContent: visit.visitContent,
+            })),
+          });
+        }
+
+        return report;
+      },
+      {
+        isolationLevel: 'Serializable',
+        timeout: 10000,
+      }
+    );
 
     // キャッシュ再検証
-    revalidatePath('/dashboard/reports');
+    revalidatePath('/reports');
     revalidatePath('/dashboard');
 
     return {
@@ -213,6 +279,22 @@ export async function submitDailyReport(formData: FormData) {
     };
   } catch (error) {
     console.error('Failed to submit daily report:', error);
+
+    // エラーの詳細なハンドリング
+    if (error instanceof Error) {
+      if (error.message === 'REPORT_DUPLICATE') {
+        return {
+          error: '同じ日付の日報が既に存在します', // E-008
+        };
+      }
+      if (error.message === 'INVALID_CUSTOMER_ID') {
+        return {
+          error:
+            '選択された顧客が存在しません。ページを再読み込みしてください。',
+        };
+      }
+    }
+
     return {
       error: 'システムエラーが発生しました。管理者にお問い合わせください。',
     };
@@ -277,18 +359,54 @@ export async function updateDraftDailyReport(
     let visits = [];
     try {
       visits = visitsJson ? JSON.parse(visitsJson) : [];
-    } catch {
-      visits = [];
+    } catch (error) {
+      console.error('Failed to parse visits JSON:', error);
+      return {
+        error: '訪問記録のデータ形式が正しくありません',
+      };
+    }
+
+    // バリデーション（下書きは訪問記録なしでもOK）
+    const validatedFields = dailyReportSchema.safeParse({
+      reportDate: existingReport.reportDate.toISOString().split('T')[0],
+      problem: problem || null,
+      plan: plan || null,
+      visits,
+    });
+
+    if (!validatedFields.success) {
+      const firstError = validatedFields.error.errors[0];
+      return {
+        error: firstError.message || '入力内容に誤りがあります',
+      };
     }
 
     // トランザクション: 日報更新 + 訪問記録更新
     await prisma.$transaction(async (tx) => {
+      // 訪問記録の顧客IDを検証
+      if (validatedFields.data.visits.length > 0) {
+        const customerIds = [
+          ...new Set(validatedFields.data.visits.map((v) => v.customerId)),
+        ];
+
+        const existingCustomers = await tx.customer.findMany({
+          where: {
+            customerId: { in: customerIds },
+          },
+          select: { customerId: true },
+        });
+
+        if (existingCustomers.length !== customerIds.length) {
+          throw new Error('INVALID_CUSTOMER_ID');
+        }
+      }
+
       // 日報更新
       await tx.dailyReport.update({
         where: { reportId },
         data: {
-          problem: problem || null,
-          plan: plan || null,
+          problem: validatedFields.data.problem,
+          plan: validatedFields.data.plan,
         },
       });
 
@@ -298,9 +416,9 @@ export async function updateDraftDailyReport(
       });
 
       // 新しい訪問記録を作成
-      if (visits.length > 0) {
+      if (validatedFields.data.visits.length > 0) {
         await tx.visit.createMany({
-          data: visits.map((visit: any) => ({
+          data: validatedFields.data.visits.map((visit) => ({
             reportId,
             customerId: visit.customerId,
             visitTime: visit.visitTime,
@@ -311,15 +429,23 @@ export async function updateDraftDailyReport(
     });
 
     // キャッシュ再検証
-    revalidatePath('/dashboard/reports');
+    revalidatePath('/reports');
     revalidatePath('/dashboard');
-    revalidatePath(`/dashboard/reports/${reportId}`);
+    revalidatePath(`/reports/${reportId}`);
 
     return {
       success: true,
     };
   } catch (error) {
     console.error('Failed to update draft daily report:', error);
+
+    // 顧客ID不正の場合は具体的なエラーメッセージ
+    if (error instanceof Error && error.message === 'INVALID_CUSTOMER_ID') {
+      return {
+        error: '選択された顧客が存在しません。ページを再読み込みしてください。',
+      };
+    }
+
     return {
       error: 'システムエラーが発生しました。管理者にお問い合わせください。',
     };
@@ -384,25 +510,54 @@ export async function updateAndSubmitDailyReport(
     let visits = [];
     try {
       visits = visitsJson ? JSON.parse(visitsJson) : [];
-    } catch {
-      visits = [];
+    } catch (error) {
+      console.error('Failed to parse visits JSON:', error);
+      return {
+        error: '訪問記録のデータ形式が正しくありません',
+      };
     }
 
-    // 訪問記録必須チェック
-    if (visits.length === 0) {
+    // バリデーション（提出は訪問記録1件以上必須）
+    const validatedFields = dailyReportSubmitSchema.safeParse({
+      reportDate: existingReport.reportDate.toISOString().split('T')[0],
+      problem: problem || null,
+      plan: plan || null,
+      visits,
+    });
+
+    if (!validatedFields.success) {
+      const firstError = validatedFields.error.errors[0];
       return {
-        error: '日報を提出するには、訪問記録を1件以上登録してください', // E-016
+        error: firstError.message || '入力内容に誤りがあります',
       };
     }
 
     // トランザクション: 日報更新 + 訪問記録更新
     await prisma.$transaction(async (tx) => {
+      // 訪問記録の顧客IDを検証
+      if (validatedFields.data.visits.length > 0) {
+        const customerIds = [
+          ...new Set(validatedFields.data.visits.map((v) => v.customerId)),
+        ];
+
+        const existingCustomers = await tx.customer.findMany({
+          where: {
+            customerId: { in: customerIds },
+          },
+          select: { customerId: true },
+        });
+
+        if (existingCustomers.length !== customerIds.length) {
+          throw new Error('INVALID_CUSTOMER_ID');
+        }
+      }
+
       // 日報更新
       await tx.dailyReport.update({
         where: { reportId },
         data: {
-          problem: problem || null,
-          plan: plan || null,
+          problem: validatedFields.data.problem,
+          plan: validatedFields.data.plan,
           status: '提出済み',
           submittedAt: new Date(),
         },
@@ -415,7 +570,7 @@ export async function updateAndSubmitDailyReport(
 
       // 新しい訪問記録を作成
       await tx.visit.createMany({
-        data: visits.map((visit: any) => ({
+        data: validatedFields.data.visits.map((visit) => ({
           reportId,
           customerId: visit.customerId,
           visitTime: visit.visitTime,
@@ -425,15 +580,23 @@ export async function updateAndSubmitDailyReport(
     });
 
     // キャッシュ再検証
-    revalidatePath('/dashboard/reports');
+    revalidatePath('/reports');
     revalidatePath('/dashboard');
-    revalidatePath(`/dashboard/reports/${reportId}`);
+    revalidatePath(`/reports/${reportId}`);
 
     return {
       success: true,
     };
   } catch (error) {
     console.error('Failed to update and submit daily report:', error);
+
+    // 顧客ID不正の場合は具体的なエラーメッセージ
+    if (error instanceof Error && error.message === 'INVALID_CUSTOMER_ID') {
+      return {
+        error: '選択された顧客が存在しません。ページを再読み込みしてください。',
+      };
+    }
+
     return {
       error: 'システムエラーが発生しました。管理者にお問い合わせください。',
     };
