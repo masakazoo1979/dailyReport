@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +15,6 @@ import {
   updateDraftDailyReport,
   updateAndSubmitDailyReport,
 } from '@/app/actions/daily-reports';
-import { getCustomersForSelect } from '@/app/actions/customers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,6 +47,10 @@ interface DailyReportFormProps {
    * 編集モードかどうか
    */
   isEditMode?: boolean;
+  /**
+   * 顧客一覧（Server Componentで取得済み）
+   */
+  customers: CustomerOption[];
 }
 
 /**
@@ -69,12 +72,11 @@ interface DailyReportFormProps {
 export function DailyReportForm({
   existingReport,
   isEditMode = false,
+  customers,
 }: DailyReportFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customers, setCustomers] = useState<CustomerOption[]>([]);
-  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
 
   // 今日の日付を YYYY-MM-DD 形式で取得
   const today = new Date().toISOString().split('T')[0];
@@ -105,22 +107,6 @@ export function DailyReportForm({
     control,
     name: 'visits',
   });
-
-  // 顧客一覧を取得
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setIsLoadingCustomers(true);
-      const result = await getCustomersForSelect();
-      if (result.success && result.data) {
-        setCustomers(result.data);
-      } else {
-        setServerError(result.error || '顧客一覧の取得に失敗しました');
-      }
-      setIsLoadingCustomers(false);
-    };
-
-    fetchCustomers();
-  }, []);
 
   /**
    * 訪問記録を追加
@@ -335,7 +321,7 @@ export function DailyReportForm({
                         control={control}
                         render={({ field }) => (
                           <Select
-                            disabled={isSubmitting || isLoadingCustomers}
+                            disabled={isSubmitting}
                             value={field.value?.toString() || ''}
                             onValueChange={(value) =>
                               field.onChange(value ? parseInt(value, 10) : null)
@@ -423,7 +409,7 @@ export function DailyReportForm({
               type="button"
               variant="outline"
               onClick={handleAddVisit}
-              disabled={isSubmitting || isLoadingCustomers}
+              disabled={isSubmitting}
             >
               <Plus className="mr-2 h-4 w-4" />
               訪問記録を追加

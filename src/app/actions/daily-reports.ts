@@ -9,6 +9,18 @@ import {
 } from '@/lib/validations/daily-report';
 
 /**
+ * HH:MM形式の時刻文字列をDateTimeに変換する
+ * @param timeString - "09:00"形式の時刻文字列
+ * @returns DateTime型
+ */
+function parseVisitTime(timeString: string): Date {
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
+/**
  * 日報作成（下書き保存）のサーバーアクション
  *
  * @param formData - フォームデータ
@@ -91,7 +103,7 @@ export async function saveDraftDailyReport(formData: FormData) {
           data: validatedFields.data.visits.map((visit) => ({
             reportId: report.reportId,
             customerId: visit.customerId,
-            visitTime: visit.visitTime,
+            visitTime: parseVisitTime(visit.visitTime),
             visitContent: visit.visitContent,
           })),
         });
@@ -200,7 +212,7 @@ export async function submitDailyReport(formData: FormData) {
           data: validatedFields.data.visits.map((visit) => ({
             reportId: report.reportId,
             customerId: visit.customerId,
-            visitTime: visit.visitTime,
+            visitTime: parseVisitTime(visit.visitTime),
             visitContent: visit.visitContent,
           })),
         });
@@ -312,7 +324,7 @@ export async function updateDraftDailyReport(
           data: visits.map((visit: any) => ({
             reportId,
             customerId: visit.customerId,
-            visitTime: visit.visitTime,
+            visitTime: parseVisitTime(visit.visitTime),
             visitContent: visit.visitContent,
           })),
         });
@@ -427,7 +439,7 @@ export async function updateAndSubmitDailyReport(
         data: visits.map((visit: any) => ({
           reportId,
           customerId: visit.customerId,
-          visitTime: visit.visitTime,
+          visitTime: parseVisitTime(visit.visitTime),
           visitContent: visit.visitContent,
         })),
       });

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getDailyReportById } from '@/app/actions/daily-reports';
+import { getCustomersForSelect } from '@/app/actions/customers';
 import { DailyReportForm } from '@/components/features/daily-reports/DailyReportForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -51,11 +52,20 @@ export default async function EditReportPage({ params }: EditReportPageProps) {
     notFound();
   }
 
-  // 日報データを取得
-  const result = await getDailyReportById(reportId);
+  // 日報データと顧客一覧を並行して取得
+  const [result, customersResult] = await Promise.all([
+    getDailyReportById(reportId),
+    getCustomersForSelect(),
+  ]);
 
   // エラーの場合
   if (result.error || !result.data) {
+    // 日報が見つからない場合は404ページを表示
+    if (result.error === '日報が見つかりません') {
+      notFound();
+    }
+
+    // その他のエラー（権限エラー、システムエラー）はAlert表示
     return (
       <div className="container max-w-4xl py-8">
         <Alert variant="destructive">
@@ -68,7 +78,22 @@ export default async function EditReportPage({ params }: EditReportPageProps) {
     );
   }
 
+  // 顧客一覧の取得エラー
+  if (customersResult.error || !customersResult.data) {
+    return (
+      <div className="container max-w-4xl py-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {customersResult.error || '顧客一覧の取得に失敗しました'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   const report = result.data;
+  const customers = customersResult.data;
 
   // ステータスチェック: 提出済み・承認済みの場合は編集不可
   const isEditable = report.status === '下書き' || report.status === '差し戻し';
@@ -100,7 +125,11 @@ export default async function EditReportPage({ params }: EditReportPageProps) {
         <p className="text-muted-foreground mt-2">営業日報を編集してください</p>
       </div>
 
-      <DailyReportForm existingReport={report} isEditMode={true} />
+      <DailyReportForm
+        existingReport={report}
+        isEditMode={true}
+        customers={customers}
+      />
     </div>
   );
 }
