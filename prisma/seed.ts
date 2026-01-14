@@ -135,8 +135,8 @@ async function main() {
   const twoDaysAgo = new Date(today);
   twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-  // 下書き日報（未使用変数のため_プレフィックス）
-  const _draftReport = await prisma.dailyReport.upsert({
+  // 下書き日報
+  await prisma.dailyReport.upsert({
     where: {
       salesId_reportDate: {
         salesId: sales1.salesId,
