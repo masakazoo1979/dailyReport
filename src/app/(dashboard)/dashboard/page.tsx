@@ -313,12 +313,7 @@ export default async function DashboardPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             しばらくしてから再度お試しください。問題が解決しない場合は管理者にお問い合わせください。
           </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => window.location.reload()}
-            asChild
-          >
+          <Button variant="outline" className="mt-4" asChild>
             <Link href="/dashboard">再読み込み</Link>
           </Button>
         </div>
