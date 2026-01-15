@@ -67,10 +67,11 @@ export function ReportFilters({
     if (endDate) {
       params.set('endDate', endDate);
     }
-    if (status) {
+    // '_all' は「すべて」を表す内部値なので、パラメータには含めない
+    if (status && status !== '_all') {
       params.set('status', status);
     }
-    if (salesId) {
+    if (salesId && salesId !== '_all') {
       params.set('salesId', salesId);
     }
     params.set('page', '1');
