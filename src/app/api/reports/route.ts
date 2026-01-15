@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { Prisma } from '@prisma/client';
 import { authOptions, SessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createReportSchema } from '@/lib/validations/report';
@@ -46,24 +47,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 同日の日報が既に存在するかチェック
-    const existingReport = await prisma.dailyReport.findUnique({
-      where: {
-        salesId_reportDate: {
-          salesId: user.salesId,
-          reportDate: parsedDate,
-        },
-      },
-    });
-
-    if (existingReport) {
-      return NextResponse.json(
-        { error: 'この日付の日報は既に登録されています' },
-        { status: 409 }
-      );
-    }
-
     // トランザクションで日報と訪問記録を作成
+    // 同日重複チェックはユニーク制約で保証（レースコンディション対策）
     const result = await prisma.$transaction(async (tx) => {
       // 日報を作成
       const report = await tx.dailyReport.create({
@@ -177,22 +162,20 @@ export async function GET(request: NextRequest) {
     }
 
     // 検索条件の構築
-    const where: any = {
+    const where: Prisma.DailyReportWhereInput = {
       salesId: salesIdCondition,
     };
 
+    // 日付範囲の条件を構築
+    const reportDateCondition: Prisma.DateTimeFilter<'DailyReport'> = {};
     if (startDate) {
-      where.reportDate = {
-        ...where.reportDate,
-        gte: new Date(startDate),
-      };
+      reportDateCondition.gte = new Date(startDate);
     }
-
     if (endDate) {
-      where.reportDate = {
-        ...where.reportDate,
-        lte: new Date(endDate),
-      };
+      reportDateCondition.lte = new Date(endDate);
+    }
+    if (Object.keys(reportDateCondition).length > 0) {
+      where.reportDate = reportDateCondition;
     }
 
     if (status) {
