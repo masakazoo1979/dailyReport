@@ -51,7 +51,7 @@ export function Sidebar() {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isManager = (session?.user as any)?.role === 'MANAGER';
+  const isManager = session?.user?.role === 'MANAGER';
 
   const filteredNavItems = navItems.filter(
     (item) => !item.requireManager || isManager
