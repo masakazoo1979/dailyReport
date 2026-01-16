@@ -14,7 +14,7 @@ import { REPORT_STATUSES } from '@/lib/constants';
  * - 上長: 自分と配下メンバーの日報を取得可能
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
