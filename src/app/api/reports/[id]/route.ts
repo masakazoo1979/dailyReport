@@ -15,7 +15,7 @@ import { REPORT_STATUSES } from '@/lib/constants';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     // 認証チェック
@@ -25,6 +25,7 @@ export async function GET(
     }
 
     const user = session.user as SessionUser;
+    const params = await props.params;
     const reportId = parseInt(params.id, 10);
 
     if (isNaN(reportId)) {
@@ -125,7 +126,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     // 認証チェック
@@ -135,6 +136,7 @@ export async function PUT(
     }
 
     const user = session.user as SessionUser;
+    const params = await props.params;
     const reportId = parseInt(params.id, 10);
 
     if (isNaN(reportId)) {

@@ -41,7 +41,6 @@ import {
   type VisitInput,
 } from '@/lib/validations/report';
 import { REPORT_STATUSES, type ReportStatus } from '@/lib/constants';
-import { formatDate } from '@/lib/utils';
 
 interface Customer {
   customerId: number;

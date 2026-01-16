@@ -5,7 +5,7 @@ import { authOptions, SessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Button } from '@/components/ui/button';
 import { ReportEditForm } from '@/components/features/reports/ReportEditForm';
-import { REPORT_STATUSES } from '@/lib/constants';
+import { REPORT_STATUSES, type ReportStatus } from '@/lib/constants';
 
 /**
  * 日報編集画面 (S-005)
@@ -25,10 +25,8 @@ import { REPORT_STATUSES } from '@/lib/constants';
  * - ステータスが「下書き」または「差し戻し」の日報のみ編集可能
  * - ステータスが「提出済み」「承認済み」の場合は詳細画面にリダイレクト
  */
-export default async function EditReportPage({
-  params,
-}: {
-  params: { id: string };
+export default async function EditReportPage(props: {
+  params: Promise<{ id: string }>;
 }) {
   const session = await getServerSession(authOptions);
 
@@ -37,6 +35,7 @@ export default async function EditReportPage({
   }
 
   const user = session.user as SessionUser;
+  const params = await props.params;
   const reportId = parseInt(params.id, 10);
 
   if (isNaN(reportId)) {
@@ -205,7 +204,7 @@ export default async function EditReportPage({
             reportDate: report.reportDate,
             problem: report.problem,
             plan: report.plan,
-            status: report.status as any,
+            status: report.status as ReportStatus,
             visits: report.visits,
           }}
           customers={customers}
