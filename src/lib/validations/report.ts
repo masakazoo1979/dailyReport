@@ -94,9 +94,47 @@ export const createReportSchema = z.object({
 });
 
 /**
+ * 日報更新APIリクエストのバリデーションスキーマ
+ */
+export const updateReportSchema = z.object({
+  problem: z
+    .string()
+    .max(2000, '課題・相談は2000文字以内で入力してください')
+    .optional()
+    .nullable(),
+  plan: z
+    .string()
+    .max(2000, '明日の予定は2000文字以内で入力してください')
+    .optional()
+    .nullable(),
+  status: z.enum(['下書き', '提出済み', '差し戻し'], {
+    errorMap: () => ({
+      message:
+        'ステータスは「下書き」、「提出済み」、または「差し戻し」を選択してください',
+    }),
+  }),
+  visits: z
+    .array(
+      z.object({
+        visitTime: z
+          .string()
+          .min(1, '訪問時刻を入力してください')
+          .regex(timeRegex, '訪問時刻はHH:MM形式で入力してください'),
+        customerId: z.number().int().positive(),
+        visitContent: z
+          .string()
+          .min(1, '訪問内容を入力してください')
+          .max(1000, '訪問内容は1000文字以内で入力してください'),
+      })
+    )
+    .optional(),
+});
+
+/**
  * 型定義
  */
 export type VisitInput = z.infer<typeof visitSchema>;
 export type ReportFormInput = z.infer<typeof reportFormSchema>;
 export type ReportSubmitInput = z.infer<typeof reportSubmitSchema>;
 export type CreateReportInput = z.infer<typeof createReportSchema>;
+export type UpdateReportInput = z.infer<typeof updateReportSchema>;
