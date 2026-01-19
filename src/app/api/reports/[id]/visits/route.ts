@@ -105,7 +105,7 @@ export async function GET(
       customer_id: visit.customer.customerId,
       customer_name: visit.customer.customerName,
       company_name: visit.customer.companyName,
-      visit_time: visit.visitTime.toISOString().substring(11, 16), // "HH:MM" format
+      visit_time: visit.visitTime.toISOString().substring(11, 19), // "HH:MM:SS" format
       visit_content: visit.visitContent,
       created_at: visit.createdAt.toISOString(),
       updated_at: visit.updatedAt.toISOString(),
@@ -151,8 +151,15 @@ export async function POST(
 
     const body = await request.json();
 
+    // snake_case → camelCase 変換（API仕様書との互換性）
+    const normalizedBody = {
+      visitTime: body.visit_time ?? body.visitTime,
+      customerId: body.customer_id ?? body.customerId,
+      visitContent: body.visit_content ?? body.visitContent,
+    };
+
     // バリデーション
-    const validation = visitSchema.safeParse(body);
+    const validation = visitSchema.safeParse(normalizedBody);
     if (!validation.success) {
       const errorMessage = validation.error.errors[0]?.message;
       return NextResponse.json(
@@ -257,7 +264,7 @@ export async function POST(
       customer_id: visit.customer.customerId,
       customer_name: visit.customer.customerName,
       company_name: visit.customer.companyName,
-      visit_time: visit.visitTime.toISOString().substring(11, 16),
+      visit_time: visit.visitTime.toISOString().substring(11, 19),
       visit_content: visit.visitContent,
       created_at: visit.createdAt.toISOString(),
       updated_at: visit.updatedAt.toISOString(),

@@ -38,8 +38,15 @@ export async function PUT(
 
     const body = await request.json();
 
+    // snake_case → camelCase 変換（API仕様書との互換性）
+    const normalizedBody = {
+      visitTime: body.visit_time ?? body.visitTime,
+      customerId: body.customer_id ?? body.customerId,
+      visitContent: body.visit_content ?? body.visitContent,
+    };
+
     // バリデーション
-    const validation = visitSchema.safeParse(body);
+    const validation = visitSchema.safeParse(normalizedBody);
     if (!validation.success) {
       const errorMessage = validation.error.errors[0]?.message;
       return NextResponse.json(
@@ -148,7 +155,7 @@ export async function PUT(
       customer_id: updatedVisit.customer.customerId,
       customer_name: updatedVisit.customer.customerName,
       company_name: updatedVisit.customer.companyName,
-      visit_time: updatedVisit.visitTime.toISOString().substring(11, 16),
+      visit_time: updatedVisit.visitTime.toISOString().substring(11, 19),
       visit_content: updatedVisit.visitContent,
       created_at: updatedVisit.createdAt.toISOString(),
       updated_at: updatedVisit.updatedAt.toISOString(),
