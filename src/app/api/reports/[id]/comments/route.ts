@@ -9,7 +9,7 @@ import { ROLES } from '@/lib/constants';
  * コメント投稿のバリデーションスキーマ
  */
 const createCommentSchema = z.object({
-  content: z
+  comment_content: z
     .string()
     .min(1, 'コメントを入力してください')
     .max(1000, 'コメントは1000文字以内で入力してください'),
@@ -83,6 +83,7 @@ export async function GET(
           select: {
             salesId: true,
             salesName: true,
+            role: true,
           },
         },
       },
@@ -91,7 +92,18 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({ comments });
+    // レスポンス形式を整形（API仕様書に準拠）
+    const data = comments.map((comment) => ({
+      comment_id: comment.commentId,
+      report_id: comment.reportId,
+      sales_id: comment.sales.salesId,
+      sales_name: comment.sales.salesName,
+      role: comment.sales.role,
+      comment_content: comment.commentContent,
+      created_at: comment.createdAt.toISOString(),
+    }));
+
+    return NextResponse.json({ data });
   } catch (error) {
     console.error('Failed to fetch comments:', error);
     return NextResponse.json(
@@ -140,7 +152,7 @@ export async function POST(
       );
     }
 
-    const { content } = validation.data;
+    const { comment_content } = validation.data;
 
     // 日報の存在確認と権限チェック
     const report = await prisma.dailyReport.findUnique({
@@ -180,25 +192,31 @@ export async function POST(
       data: {
         reportId,
         salesId: user.salesId,
-        commentContent: content,
+        commentContent: comment_content,
       },
       include: {
         sales: {
           select: {
             salesId: true,
             salesName: true,
+            role: true,
           },
         },
       },
     });
 
-    return NextResponse.json(
-      {
-        message: 'コメントを投稿しました',
-        comment,
-      },
-      { status: 201 }
-    );
+    // レスポンス形式を整形（API仕様書に準拠）
+    const data = {
+      comment_id: comment.commentId,
+      report_id: comment.reportId,
+      sales_id: comment.sales.salesId,
+      sales_name: comment.sales.salesName,
+      role: comment.sales.role,
+      comment_content: comment.commentContent,
+      created_at: comment.createdAt.toISOString(),
+    };
+
+    return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     console.error('Failed to create comment:', error);
     return NextResponse.json(
