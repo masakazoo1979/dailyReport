@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createCustomerSchema } from '@/lib/validations/customer';
 
 /**
  * 顧客一覧取得API
@@ -76,6 +77,68 @@ export async function GET(request: NextRequest) {
     console.error('Failed to fetch customers:', error);
     return NextResponse.json(
       { error: '顧客一覧の取得に失敗しました' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * 顧客作成API
+ * POST /api/customers
+ *
+ * 新しい顧客を作成します。
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // 認証チェック
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
+    // リクエストボディを取得
+    const body = await request.json();
+
+    // バリデーション
+    const validation = createCustomerSchema.safeParse(body);
+    if (!validation.success) {
+      const errorMessage = validation.error.errors[0]?.message;
+      return NextResponse.json(
+        { error: errorMessage || '入力内容に誤りがあります' },
+        { status: 400 }
+      );
+    }
+
+    const data = validation.data;
+
+    // 顧客を作成
+    const customer = await prisma.customer.create({
+      data: {
+        companyName: data.companyName,
+        customerName: data.customerName,
+        industry: data.industry || null,
+        phone: data.phone || null,
+        email: data.email || null,
+        address: data.address || null,
+      },
+      select: {
+        customerId: true,
+        customerName: true,
+        companyName: true,
+        industry: true,
+        phone: true,
+        email: true,
+        address: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json({ data: customer }, { status: 201 });
+  } catch (error) {
+    console.error('Failed to create customer:', error);
+    return NextResponse.json(
+      { error: '顧客の作成に失敗しました' },
       { status: 500 }
     );
   }
