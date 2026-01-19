@@ -247,3 +247,79 @@ export async function PUT(
     );
   }
 }
+
+/**
+ * 日報削除API
+ * DELETE /api/reports/[id]
+ *
+ * 日報を削除します。
+ * - 自分の日報のみ削除可能
+ * - ステータスが「下書き」の日報のみ削除可能
+ * - 「提出済み」「承認済み」「差し戻し」の日報は削除不可
+ */
+export async function DELETE(
+  _request: NextRequest,
+  props: { params: Promise<{ id: string }> }
+) {
+  try {
+    // 認証チェック
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
+    const user = session.user as SessionUser;
+    const params = await props.params;
+    const reportId = parseInt(params.id, 10);
+
+    if (isNaN(reportId)) {
+      return NextResponse.json({ error: '日報IDが不正です' }, { status: 400 });
+    }
+
+    // 既存の日報を取得
+    const existingReport = await prisma.dailyReport.findUnique({
+      where: { reportId },
+      select: {
+        reportId: true,
+        salesId: true,
+        status: true,
+      },
+    });
+
+    if (!existingReport) {
+      return NextResponse.json(
+        { error: '日報が見つかりません' },
+        { status: 404 }
+      );
+    }
+
+    // 権限チェック（自分の日報のみ）
+    if (existingReport.salesId !== user.salesId) {
+      return NextResponse.json(
+        { error: '削除権限がありません' },
+        { status: 403 }
+      );
+    }
+
+    // ステータスチェック（下書きのみ削除可能）
+    if (existingReport.status !== REPORT_STATUSES.DRAFT) {
+      return NextResponse.json(
+        { error: 'この日報は削除できません' },
+        { status: 400 }
+      );
+    }
+
+    // 日報を削除（関連する訪問記録・コメントはカスケード削除）
+    await prisma.dailyReport.delete({
+      where: { reportId },
+    });
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error('Failed to delete report:', error);
+    return NextResponse.json(
+      { error: '日報の削除に失敗しました' },
+      { status: 500 }
+    );
+  }
+}
