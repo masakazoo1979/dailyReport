@@ -24,3 +24,17 @@ export const REPORT_STATUSES = {
 
 export type ReportStatus =
   (typeof REPORT_STATUSES)[keyof typeof REPORT_STATUSES];
+
+/**
+ * 業種
+ */
+export const INDUSTRIES = {
+  IT: 'IT',
+  MANUFACTURING: '製造',
+  FINANCE: '金融',
+  RETAIL: '小売',
+  SERVICE: 'サービス',
+  OTHER: 'その他',
+} as const;
+
+export type Industry = (typeof INDUSTRIES)[keyof typeof INDUSTRIES];
