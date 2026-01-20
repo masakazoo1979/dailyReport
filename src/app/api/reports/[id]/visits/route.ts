@@ -210,7 +210,10 @@ export async function POST(
     }
 
     // ステータスチェック（下書きまたは差し戻しのみ編集可能）
-    const editableStatuses = [REPORT_STATUSES.DRAFT, REPORT_STATUSES.REJECTED];
+    const editableStatuses: string[] = [
+      REPORT_STATUSES.DRAFT,
+      REPORT_STATUSES.REJECTED,
+    ];
     if (!editableStatuses.includes(report.status)) {
       return NextResponse.json(
         {
