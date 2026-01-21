@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { REPORT_STATUSES } from '@/lib/constants';
 import { dateStringSchema, optionalIdSchema } from './common';
-import { visitFormSchema, visitsRequiredArraySchema } from './visit';
+import {
+  visitFormSchema,
+  visitsRequiredArraySchema,
+  createVisitSchema,
+} from './visit';
 
 /**
  * 日報ステータスのバリデーションスキーマ
@@ -15,7 +19,7 @@ export const reportStatusSchema = z.enum(
   ],
   {
     errorMap: () => ({
-      message: '有効なステータスを選択してください。',
+      message: '有効なステータスを選択してください',
     }),
   }
 );
@@ -27,7 +31,7 @@ export const createReportStatusSchema = z.enum(
   [REPORT_STATUSES.DRAFT, REPORT_STATUSES.SUBMITTED],
   {
     errorMap: () => ({
-      message: 'ステータスは「下書き」または「提出済み」を選択してください。',
+      message: 'ステータスは「下書き」または「提出済み」を選択してください',
     }),
   }
 );
@@ -37,7 +41,7 @@ export const createReportStatusSchema = z.enum(
  */
 export const problemSchema = z
   .string()
-  .max(2000, '課題・相談は2000文字以内で入力してください。')
+  .max(2000, '課題・相談は2000文字以内で入力してください')
   .optional()
   .nullable()
   .or(z.literal(''));
@@ -47,7 +51,7 @@ export const problemSchema = z
  */
 export const planSchema = z
   .string()
-  .max(2000, '明日の予定は2000文字以内で入力してください。')
+  .max(2000, '明日の予定は2000文字以内で入力してください')
   .optional()
   .nullable()
   .or(z.literal(''));
@@ -57,12 +61,12 @@ export const planSchema = z
  */
 export const dailyReportFormSchema = z.object({
   reportDate: z.date({
-    required_error: '報告日を選択してください。',
-    invalid_type_error: '報告日の形式が正しくありません。',
+    required_error: '報告日を選択してください',
+    invalid_type_error: '報告日の形式が正しくありません',
   }),
   visits: z
     .array(visitFormSchema)
-    .min(0, '訪問記録は0件以上である必要があります。'),
+    .min(0, '訪問記録は0件以上である必要があります'),
   problem: problemSchema,
   plan: planSchema,
 });
@@ -82,27 +86,7 @@ export const createDailyReportSchema = z.object({
   problem: problemSchema,
   plan: planSchema,
   status: createReportStatusSchema,
-  visits: z
-    .array(
-      z.object({
-        visitTime: z
-          .string()
-          .min(1, '訪問時刻を入力してください。')
-          .regex(
-            /^([0-1][0-9]|2[0-3]):([0-5][0-9])$/,
-            '訪問時刻はHH:MM形式で入力してください。'
-          ),
-        customerId: z
-          .number()
-          .int()
-          .positive('顧客IDは正の整数で指定してください。'),
-        visitContent: z
-          .string()
-          .min(1, '訪問内容を入力してください。')
-          .max(1000, '訪問内容は1000文字以内で入力してください。'),
-      })
-    )
-    .optional(),
+  visits: z.array(createVisitSchema).optional(),
 });
 
 /**
@@ -121,32 +105,12 @@ export const updateDailyReportSchema = z.object({
       {
         errorMap: () => ({
           message:
-            'ステータスは「下書き」、「提出済み」、または「差し戻し」を選択してください。',
+            'ステータスは「下書き」、「提出済み」、または「差し戻し」を選択してください',
         }),
       }
     )
     .optional(),
-  visits: z
-    .array(
-      z.object({
-        visitTime: z
-          .string()
-          .min(1, '訪問時刻を入力してください。')
-          .regex(
-            /^([0-1][0-9]|2[0-3]):([0-5][0-9])$/,
-            '訪問時刻はHH:MM形式で入力してください。'
-          ),
-        customerId: z
-          .number()
-          .int()
-          .positive('顧客IDは正の整数で指定してください。'),
-        visitContent: z
-          .string()
-          .min(1, '訪問内容を入力してください。')
-          .max(1000, '訪問内容は1000文字以内で入力してください。'),
-      })
-    )
-    .optional(),
+  visits: z.array(createVisitSchema).optional(),
 });
 
 /**
@@ -171,7 +135,7 @@ export const dailyReportSearchSchema = z
       return true;
     },
     {
-      message: '終了日は開始日以降の日付を指定してください。',
+      message: '終了日は開始日以降の日付を指定してください',
       path: ['endDate'],
     }
   );
@@ -196,7 +160,7 @@ export const approveDailyReportSchema = z.object({
 export const rejectDailyReportSchema = z.object({
   comment: z
     .string()
-    .max(1000, 'コメントは1000文字以内で入力してください。')
+    .max(1000, 'コメントは1000文字以内で入力してください')
     .optional()
     .nullable(),
 });

@@ -5,8 +5,8 @@ import { z } from 'zod';
  */
 export const commentContentSchema = z
   .string()
-  .min(1, 'コメントを入力してください。')
-  .max(1000, 'コメントは1000文字以内で入力してください。');
+  .min(1, 'コメントを入力してください')
+  .max(1000, 'コメントは1000文字以内で入力してください');
 
 /**
  * コメントフォームのバリデーションスキーマ
@@ -28,7 +28,7 @@ export const createCommentSchema = z.object({
 export const rejectCommentSchema = z.object({
   comment: z
     .string()
-    .max(1000, 'コメントは1000文字以内で入力してください。')
+    .max(1000, 'コメントは1000文字以内で入力してください')
     .optional()
     .nullable()
     .or(z.literal('')),

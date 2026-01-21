@@ -5,6 +5,22 @@
  * Zodバリデーションスキーマを提供します。
  */
 
+import { z } from 'zod';
+import { japaneseErrorMap } from './common';
+
+/**
+ * Zodのグローバルエラーマップを日本語に設定する
+ * アプリケーション初期化時に呼び出してください
+ *
+ * @example
+ * // app/layout.tsx または providers.tsx で
+ * import { setupJapaneseErrorMap } from '@/lib/validations';
+ * setupJapaneseErrorMap();
+ */
+export function setupJapaneseErrorMap(): void {
+  z.setErrorMap(japaneseErrorMap);
+}
+
 // 共通バリデーション
 export {
   emailSchema,
