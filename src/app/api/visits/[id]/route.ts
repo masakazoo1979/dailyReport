@@ -101,7 +101,10 @@ export async function PUT(
     }
 
     // ステータスチェック（下書きまたは差し戻しのみ編集可能）
-    const editableStatuses = [REPORT_STATUSES.DRAFT, REPORT_STATUSES.REJECTED];
+    const editableStatuses: string[] = [
+      REPORT_STATUSES.DRAFT,
+      REPORT_STATUSES.REJECTED,
+    ];
     if (!editableStatuses.includes(visit.dailyReport.status)) {
       return NextResponse.json(
         {
@@ -248,9 +251,12 @@ export async function DELETE(
       );
     }
 
-    // ステータスチェック（下書きまたは差し戻しのみ編集可能）
-    const editableStatuses = [REPORT_STATUSES.DRAFT, REPORT_STATUSES.REJECTED];
-    if (!editableStatuses.includes(visit.dailyReport.status)) {
+    // ステータスチェック（下書きまたは差し戻しのみ削除可能）
+    const deleteEditableStatuses: string[] = [
+      REPORT_STATUSES.DRAFT,
+      REPORT_STATUSES.REJECTED,
+    ];
+    if (!deleteEditableStatuses.includes(visit.dailyReport.status)) {
       return NextResponse.json(
         {
           error: '提出済みまたは承認済みの日報の訪問記録は削除できません',
