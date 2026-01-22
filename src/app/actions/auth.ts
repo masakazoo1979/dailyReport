@@ -2,24 +2,59 @@
 
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { authOptions } from '@/lib/auth';
+import { logLogout } from '@/lib/auth/audit-log';
+
+/**
+ * NextAuth.jsのセッションクッキー名を取得
+ * 環境によって異なる名前が使用される
+ */
+function getSessionCookieNames(): string[] {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const useSecureCookies =
+    isProduction || process.env.NEXTAUTH_URL?.startsWith('https://');
+
+  if (useSecureCookies) {
+    return [
+      '__Secure-next-auth.session-token',
+      '__Secure-next-auth.callback-url',
+      '__Secure-next-auth.csrf-token',
+    ];
+  }
+
+  return [
+    'next-auth.session-token',
+    'next-auth.callback-url',
+    'next-auth.csrf-token',
+  ];
+}
 
 /**
  * ログアウト処理を行うServer Action
  *
- * - セッションを完全にクリア
+ * - セッションを完全にクリア（クッキーを削除）
+ * - 監査ログに記録
  * - ログインページへリダイレクト
  */
 export async function logoutAction() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
-    // 既にログアウト済みの場合はログインページへリダイレクト
-    redirect('/login');
+  // 監査ログに記録
+  if (session?.user) {
+    await logLogout(session.user.email, (session.user as any).salesId ?? null);
   }
 
-  // セッションをクリアしてログインページへリダイレクト
-  redirect('/api/auth/signout?callbackUrl=/login');
+  // セッションクッキーを削除
+  const cookieStore = await cookies();
+  const cookieNames = getSessionCookieNames();
+
+  for (const cookieName of cookieNames) {
+    cookieStore.delete(cookieName);
+  }
+
+  // ログインページへリダイレクト
+  redirect('/login');
 }
 
 /**

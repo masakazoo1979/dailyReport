@@ -8,13 +8,20 @@ import type { NextRequest } from 'next/server';
  * - 保護されたルートへの未認証アクセスをログインページへリダイレクト
  * - 認証済みユーザーがログインページにアクセスした場合ダッシュボードへリダイレクト
  * - 上長専用ルートへの権限チェック
+ *
+ * 注意: セキュリティヘッダーは next.config.js で設定しているため、
+ *       このミドルウェアでは設定しない
  */
 
-// 認証が不要なパス
-const publicPaths = ['/login', '/api/auth'];
+// 認証が不要なパス（/loginは別途処理するため含めない）
+const publicPaths = ['/api/auth'];
 
 // 上長のみがアクセスできるパス
 const managerOnlyPaths = ['/sales'];
+
+// 静的リソースのファイル拡張子パターン
+const staticFileExtensions =
+  /\.(ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|css|js|map)$/i;
 
 /**
  * パスが公開パスかどうかを判定
@@ -36,12 +43,13 @@ function isManagerOnlyPath(pathname: string): boolean {
 
 /**
  * パスが静的リソースかどうかを判定
+ * ファイル拡張子で判定することで、バージョン付きAPIパスを誤ってスキップしない
  */
 function isStaticPath(pathname: string): boolean {
   return (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/api/auth/') ||
-    pathname.includes('.') // ファイル拡張子があるもの (favicon.ico など)
+    staticFileExtensions.test(pathname)
   );
 }
 
@@ -53,8 +61,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 公開パスはスキップ（ただしログインページは認証済みならリダイレクト）
-  if (isPublicPath(pathname) && pathname !== '/login') {
+  // 公開パスはスキップ
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
@@ -90,16 +98,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // セキュリティヘッダーを追加
-  const response = NextResponse.next();
-
-  // 基本的なセキュリティヘッダー
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {

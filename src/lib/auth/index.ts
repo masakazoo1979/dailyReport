@@ -23,3 +23,16 @@ export {
   type AuthResult,
   type ManagerAuthResult,
 } from './api';
+
+// 監査ログ関連
+export {
+  AuditAction,
+  logAudit,
+  logLogin,
+  logLogout,
+  logLoginFailed,
+  logUnauthorizedAccess,
+  logPermissionDenied,
+  type AuditActionType,
+  type AuditLogParams,
+} from './audit-log';
