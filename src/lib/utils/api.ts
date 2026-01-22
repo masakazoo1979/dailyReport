@@ -313,3 +313,32 @@ export function getPaginationParams(request: Request): {
   const skip = (page - 1) * perPage;
   return { page, perPage, skip };
 }
+
+/**
+ * APIルートハンドラーをラップしてエラーハンドリングを統一
+ */
+export function withErrorHandler<T>(
+  handler: (
+    request: Request,
+    context: { params: Promise<Record<string, string>> }
+  ) => Promise<NextResponse<T>>
+) {
+  return async (
+    request: Request,
+    context: { params: Promise<Record<string, string>> }
+  ): Promise<NextResponse<T | ApiErrorResponse>> => {
+    try {
+      return await handler(request, context);
+    } catch (error) {
+      // エラーログを記録
+      const { logError } = await import('./logger');
+      logError(error, {
+        context: 'APIHandler',
+        method: request.method,
+        url: request.url,
+      });
+
+      return createErrorResponse(error) as NextResponse<ApiErrorResponse>;
+    }
+  };
+}
