@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { revalidateTag } from 'next/cache';
 import bcrypt from 'bcryptjs';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -37,7 +38,11 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'salesName';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    // デフォルト limit を20に最適化（パフォーマンス改善）
+    const limit = Math.min(
+      parseInt(searchParams.get('limit') || '20', 10),
+      100
+    );
 
     // 検索条件の構築
     const where = {
@@ -215,6 +220,9 @@ export async function POST(request: NextRequest) {
         updatedAt: true,
       },
     });
+
+    // キャッシュを無効化
+    revalidateTag('sales');
 
     return NextResponse.json(
       {

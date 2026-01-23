@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { revalidateTag } from 'next/cache';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateSalesSchema } from '@/lib/validations/sales';
@@ -227,6 +228,9 @@ export async function PUT(
       },
     });
 
+    // キャッシュを無効化
+    revalidateTag('sales');
+
     return NextResponse.json({
       data: {
         salesId: sales.salesId,
@@ -331,6 +335,9 @@ export async function DELETE(
     await prisma.sales.delete({
       where: { salesId },
     });
+
+    // キャッシュを無効化
+    revalidateTag('sales');
 
     return NextResponse.json({ message: '営業担当者を削除しました' });
   } catch (error) {

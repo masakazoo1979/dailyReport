@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,7 +33,11 @@ import {
 } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { VisitModal } from './VisitModal';
+
+// 動的インポート: モーダルは使用時のみロード
+const VisitModal = lazy(() =>
+  import('./VisitModal').then((mod) => ({ default: mod.VisitModal }))
+);
 import {
   reportFormSchema,
   reportSubmitSchema,
@@ -512,17 +516,29 @@ export function ReportEditForm({
         </form>
       </Form>
 
-      {/* 訪問記録モーダル */}
-      <VisitModal
-        open={visitModalOpen}
-        onOpenChange={setVisitModalOpen}
-        onSave={handleSaveVisit}
-        customers={customers}
-        initialData={
-          editingVisitIndex !== null ? visits[editingVisitIndex] : null
-        }
-        mode={editingVisitIndex !== null ? 'edit' : 'create'}
-      />
+      {/* 訪問記録モーダル（遅延ロード） */}
+      {visitModalOpen && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="animate-pulse rounded-lg bg-white p-8">
+                読み込み中...
+              </div>
+            </div>
+          }
+        >
+          <VisitModal
+            open={visitModalOpen}
+            onOpenChange={setVisitModalOpen}
+            onSave={handleSaveVisit}
+            customers={customers}
+            initialData={
+              editingVisitIndex !== null ? visits[editingVisitIndex] : null
+            }
+            mode={editingVisitIndex !== null ? 'edit' : 'create'}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

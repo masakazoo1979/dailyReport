@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { revalidateTag } from 'next/cache';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createCustomerSchema } from '@/lib/validations/customer';
@@ -24,7 +25,11 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'companyName';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    // デフォルト limit を20に最適化（パフォーマンス改善）
+    const limit = Math.min(
+      parseInt(searchParams.get('limit') || '20', 10),
+      100
+    );
 
     // 検索条件の構築
     const where = search
@@ -133,6 +138,9 @@ export async function POST(request: NextRequest) {
         updatedAt: true,
       },
     });
+
+    // キャッシュを無効化
+    revalidateTag('customers');
 
     return NextResponse.json({ data: customer }, { status: 201 });
   } catch (error) {

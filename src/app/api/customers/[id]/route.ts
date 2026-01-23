@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { revalidateTag } from 'next/cache';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { updateCustomerSchema } from '@/lib/validations/customer';
@@ -136,6 +137,9 @@ export async function PUT(
       },
     });
 
+    // キャッシュを無効化
+    revalidateTag('customers');
+
     return NextResponse.json({ data: customer });
   } catch (error) {
     console.error('Failed to update customer:', error);
@@ -198,6 +202,9 @@ export async function DELETE(
     await prisma.customer.delete({
       where: { customerId },
     });
+
+    // キャッシュを無効化
+    revalidateTag('customers');
 
     return NextResponse.json({ message: '顧客を削除しました' });
   } catch (error) {

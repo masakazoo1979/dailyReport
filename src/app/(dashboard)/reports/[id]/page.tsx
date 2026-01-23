@@ -1,14 +1,32 @@
 import { redirect, notFound } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { authOptions, SessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { REPORT_STATUSES, ROLES, type ReportStatus } from '@/lib/constants';
-import { ReportDetailActions } from '@/components/features/reports/ReportDetailActions';
+import { getAllowedSalesIds } from '@/lib/utils/cache';
 import { CommentSection } from '@/components/features/reports/CommentSection';
+
+// 動的インポート: 上長のみ使用するコンポーネントを遅延読み込み
+const ReportDetailActions = dynamic(
+  () =>
+    import('@/components/features/reports/ReportDetailActions').then(
+      (mod) => mod.ReportDetailActions
+    ),
+  {
+    loading: () => (
+      <Card>
+        <CardContent className="py-4">
+          <div className="h-8 animate-pulse rounded bg-muted" />
+        </CardContent>
+      </Card>
+    ),
+  }
+);
 
 /**
  * 日報詳細画面 (S-005)
@@ -93,16 +111,12 @@ export default async function ReportDetailPage(props: {
     notFound();
   }
 
-  // 権限チェック
+  // 権限チェック（キャッシュ利用で効率化）
   let hasAccess = false;
   if (report.salesId === user.salesId) {
     hasAccess = true;
   } else if (user.role === ROLES.MANAGER) {
-    const subordinates = await prisma.sales.findMany({
-      where: { managerId: user.salesId },
-      select: { salesId: true },
-    });
-    const allowedIds = [user.salesId, ...subordinates.map((s) => s.salesId)];
+    const allowedIds = await getAllowedSalesIds(user.salesId);
     hasAccess = allowedIds.includes(report.salesId);
   }
 

@@ -9,6 +9,7 @@ import {
   getFirstDayOfMonthJST,
   getLastDayOfMonthJST,
 } from '@/lib/utils';
+import { getAllowedSalesIds, getSalesListForManager } from '@/lib/utils/cache';
 import {
   Card,
   CardContent,
@@ -84,18 +85,8 @@ export default async function ReportsPage({
     let salesIdCondition: number | { in: number[] } | undefined;
 
     if (user.role === ROLES.MANAGER) {
-      // 上長の場合: 配下メンバー + 自分
-      const subordinates = await prisma.sales.findMany({
-        where: {
-          managerId: user.salesId,
-        },
-        select: {
-          salesId: true,
-        },
-      });
-
-      const subordinateIds = subordinates.map((s) => s.salesId);
-      const allowedIds = [user.salesId, ...subordinateIds];
+      // 上長の場合: 配下メンバー + 自分（キャッシュ利用）
+      const allowedIds = await getAllowedSalesIds(user.salesId);
 
       if (salesId && allowedIds.includes(parseInt(salesId, 10))) {
         // 特定の営業担当者でフィルタ
@@ -149,20 +140,9 @@ export default async function ReportsPage({
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
       }),
-      // 営業担当者リスト取得（上長のみ使用）
+      // 営業担当者リスト取得（上長のみ使用、キャッシュ利用）
       user.role === ROLES.MANAGER
-        ? prisma.sales.findMany({
-            where: {
-              OR: [{ salesId: user.salesId }, { managerId: user.salesId }],
-            },
-            select: {
-              salesId: true,
-              salesName: true,
-            },
-            orderBy: {
-              salesName: 'asc',
-            },
-          })
+        ? getSalesListForManager(user.salesId)
         : Promise.resolve([]),
     ]);
 
