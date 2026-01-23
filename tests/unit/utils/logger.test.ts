@@ -23,8 +23,7 @@ describe('Logger ユーティリティ', () => {
 
   describe('logDebug', () => {
     it('開発環境でデバッグログを出力する', () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
+      vi.stubEnv('NODE_ENV', 'development');
 
       logDebug('Test debug message');
 
@@ -36,18 +35,17 @@ describe('Logger ユーティリティ', () => {
       expect(logEntry.message).toBe('Test debug message');
       expect(logEntry.timestamp).toBeDefined();
 
-      process.env.NODE_ENV = originalEnv;
+      vi.unstubAllEnvs();
     });
 
     it('本番環境ではデバッグログを出力しない', () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      vi.stubEnv('NODE_ENV', 'production');
 
       logDebug('Test debug message');
 
       expect(console.debug).not.toHaveBeenCalled();
 
-      process.env.NODE_ENV = originalEnv;
+      vi.unstubAllEnvs();
     });
   });
 

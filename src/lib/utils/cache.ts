@@ -58,6 +58,7 @@ export const getCustomerListForSelect = unstable_cache(
         customerId: true,
         customerName: true,
         companyName: true,
+        industry: true,
       },
       orderBy: {
         companyName: 'asc',

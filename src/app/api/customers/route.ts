@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { revalidateTag } from 'next/cache';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createCustomerSchema } from '@/lib/validations/customer';
@@ -137,6 +138,9 @@ export async function POST(request: NextRequest) {
         updatedAt: true,
       },
     });
+
+    // キャッシュを無効化
+    revalidateTag('customers');
 
     return NextResponse.json({ data: customer }, { status: 201 });
   } catch (error) {
