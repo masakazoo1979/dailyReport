@@ -24,7 +24,11 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'companyName';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    // デフォルト limit を20に最適化（パフォーマンス改善）
+    const limit = Math.min(
+      parseInt(searchParams.get('limit') || '20', 10),
+      100
+    );
 
     // 検索条件の構築
     const where = search

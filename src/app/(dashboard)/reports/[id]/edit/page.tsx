@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { Button } from '@/components/ui/button';
 import { ReportEditForm } from '@/components/features/reports/ReportEditForm';
 import { REPORT_STATUSES, type ReportStatus } from '@/lib/constants';
+import { getCustomerListForSelect } from '@/lib/utils/cache';
 
 /**
  * 日報編集画面 (S-005)
@@ -126,18 +127,8 @@ export default async function EditReportPage(props: {
       redirect(`/reports/${reportId}`);
     }
 
-    // 顧客一覧を取得
-    const customers = await prisma.customer.findMany({
-      select: {
-        customerId: true,
-        customerName: true,
-        companyName: true,
-        industry: true,
-      },
-      orderBy: {
-        companyName: 'asc',
-      },
-    });
+    // 顧客一覧を取得（キャッシュ利用で効率化）
+    const customers = await getCustomerListForSelect();
 
     if (customers.length === 0) {
       return (

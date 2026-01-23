@@ -117,3 +117,11 @@ export {
   showLoadingToast,
   fetchWithToast,
 } from './toast';
+
+// キャッシュユーティリティ（パフォーマンス最適化）
+export {
+  getSubordinateIds,
+  getAllowedSalesIds,
+  getCustomerListForSelect,
+  getSalesListForManager,
+} from './cache';
