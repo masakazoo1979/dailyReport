@@ -96,6 +96,8 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/daily_report_test?schema=public
           CI: true
+          NEXTAUTH_URL: http://localhost:3000
+          NEXTAUTH_SECRET: test-secret-for-ci-environment-only
         timeout-minutes: 8
 
       - name: Upload Playwright report
