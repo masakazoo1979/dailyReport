@@ -301,15 +301,16 @@ export function ReportForm({ customers }: ReportFormProps) {
                   size="sm"
                   onClick={handleAddVisit}
                   disabled={isSubmitting}
+                  aria-label="訪問記録を追加"
                 >
-                  <PlusIcon className="mr-1 h-4 w-4" />
+                  <PlusIcon className="mr-1 h-4 w-4" aria-hidden="true" />
                   追加
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               {visits.length > 0 ? (
-                <Table>
+                <Table aria-label="訪問記録一覧">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[120px]">訪問時刻</TableHead>
@@ -319,41 +320,50 @@ export function ReportForm({ customers }: ReportFormProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {visits.map((visit, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">
-                          {visit.visitTime}
-                        </TableCell>
-                        <TableCell>
-                          {getCustomerName(visit.customerId)}
-                        </TableCell>
-                        <TableCell className="max-w-[300px] truncate">
-                          {visit.visitContent}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditVisit(index)}
-                              disabled={isSubmitting}
-                            >
-                              <EditIcon className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteVisit(index)}
-                              disabled={isSubmitting}
-                            >
-                              <TrashIcon className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {visits.map((visit, index) => {
+                      const customerName = getCustomerName(visit.customerId);
+                      return (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">
+                            {visit.visitTime}
+                          </TableCell>
+                          <TableCell>{customerName}</TableCell>
+                          <TableCell className="max-w-[300px] truncate">
+                            {visit.visitContent}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditVisit(index)}
+                                disabled={isSubmitting}
+                                aria-label={`${visit.visitTime} ${customerName}の訪問記録を編集`}
+                              >
+                                <EditIcon
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteVisit(index)}
+                                disabled={isSubmitting}
+                                aria-label={`${visit.visitTime} ${customerName}の訪問記録を削除`}
+                              >
+                                <TrashIcon
+                                  className="h-4 w-4 text-destructive"
+                                  aria-hidden="true"
+                                />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               ) : (

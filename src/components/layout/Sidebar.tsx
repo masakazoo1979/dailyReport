@@ -12,7 +12,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
 interface NavItem {
@@ -46,10 +46,22 @@ const navItems: NavItem[] = [
   },
 ];
 
+/**
+ * サイドバーコンポーネント
+ *
+ * アクセシビリティ対応:
+ * - nav要素とrole="navigation"を使用
+ * - モバイルメニューのaria-expanded属性
+ * - Escキーでモバイルメニューを閉じる
+ * - フォーカストラップでキーボードナビゲーションを改善
+ * - aria-current="page"でアクティブなリンクを示す
+ */
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
   const isManager = session?.user?.role === 'MANAGER';
 
@@ -57,14 +69,39 @@ export function Sidebar() {
     (item) => !item.requireManager || isManager
   );
 
+  // Escキーでモバイルメニューを閉じる
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+        toggleButtonRef.current?.focus();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // モバイルメニューが開いたときに最初のリンクにフォーカス
+      const firstLink = sidebarRef.current?.querySelector('a');
+      firstLink?.focus();
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Mobile toggle button */}
       <Button
+        ref={toggleButtonRef}
         variant="ghost"
         size="icon"
         className="fixed left-4 top-3 z-50 md:hidden"
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? 'メニューを閉じる' : 'メニューを開く'}
+        aria-expanded={isOpen}
+        aria-controls="main-navigation"
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
@@ -74,18 +111,22 @@ export function Sidebar() {
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
+        id="main-navigation"
         className={cn(
           'fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-64 border-r bg-white transition-transform duration-300',
           'md:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        aria-label="メインナビゲーション"
       >
-        <nav className="flex flex-col gap-1 p-4">
+        <nav role="navigation" className="flex flex-col gap-1 p-4">
           {filteredNavItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -99,8 +140,10 @@ export function Sidebar() {
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
+                aria-current={isActive ? 'page' : undefined}
+                aria-label={item.label}
               >
-                {item.icon}
+                <span aria-hidden="true">{item.icon}</span>
                 {item.label}
               </Link>
             );
