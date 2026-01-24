@@ -34,7 +34,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    command: process.env.CI ? 'npm run start' : 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
@@ -42,6 +42,7 @@ export default defineConfig({
       DATABASE_URL: process.env.DATABASE_URL || '',
       NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'development-secret',
+      NODE_ENV: process.env.CI ? 'production' : 'development',
     },
   },
 });
