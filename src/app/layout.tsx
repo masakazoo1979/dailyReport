@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toast';
+import { SkipLink } from '@/components/layout/SkipLink';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
+        <SkipLink />
         {children}
         <Toaster />
       </body>

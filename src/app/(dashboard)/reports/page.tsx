@@ -206,7 +206,7 @@ export default async function ReportsPage({
           <CardContent>
             {reports.length > 0 ? (
               <>
-                <Table>
+                <Table aria-label="日報一覧">
                   <TableHeader>
                     <TableRow>
                       <TableHead>
@@ -249,7 +249,10 @@ export default async function ReportsPage({
                         <TableCell>{report._count.visits}件</TableCell>
                         <TableCell>
                           <Button variant="outline" size="sm" asChild>
-                            <Link href={`/reports/${report.reportId}`}>
+                            <Link
+                              href={`/reports/${report.reportId}`}
+                              aria-label={`${formatDate(report.reportDate)}の日報を詳細表示`}
+                            >
                               詳細
                             </Link>
                           </Button>
@@ -401,12 +404,17 @@ function Pagination({
   };
 
   return (
-    <div className="mt-4 flex items-center justify-center gap-2">
+    <nav
+      className="mt-4 flex items-center justify-center gap-2"
+      role="navigation"
+      aria-label="ページネーション"
+    >
       <Button
         variant="outline"
         size="sm"
         disabled={currentPage === 1}
         asChild={currentPage !== 1}
+        aria-label="前のページ"
       >
         {currentPage === 1 ? (
           <span>前へ</span>
@@ -421,6 +429,8 @@ function Pagination({
           variant={pageNum === currentPage ? 'default' : 'outline'}
           size="sm"
           asChild={pageNum !== currentPage}
+          aria-label={`ページ${pageNum}`}
+          aria-current={pageNum === currentPage ? 'page' : undefined}
         >
           {pageNum === currentPage ? (
             <span>{pageNum}</span>
@@ -435,6 +445,7 @@ function Pagination({
         size="sm"
         disabled={currentPage === totalPages}
         asChild={currentPage !== totalPages}
+        aria-label="次のページ"
       >
         {currentPage === totalPages ? (
           <span>次へ</span>
@@ -442,6 +453,6 @@ function Pagination({
           <Link href={buildPageUrl(currentPage + 1)}>次へ</Link>
         )}
       </Button>
-    </div>
+    </nav>
   );
 }
