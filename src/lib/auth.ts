@@ -12,8 +12,46 @@ import { loginSchema } from './validations/auth';
  * - Credentials Providerでメール/パスワード認証を実装
  * - JWT戦略を使用
  */
+// CI環境ではHTTPでテストするため、セキュアクッキーを無効にする必要がある
+const useSecureCookies =
+  process.env.NODE_ENV === 'production' && !process.env.CI;
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
+  cookies: {
+    sessionToken: {
+      name: useSecureCookies
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    callbackUrl: {
+      name: useSecureCookies
+        ? '__Secure-next-auth.callback-url'
+        : 'next-auth.callback-url',
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+    csrfToken: {
+      name: useSecureCookies
+        ? '__Host-next-auth.csrf-token'
+        : 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+  },
   providers: [
     CredentialsProvider({
       id: 'credentials',
