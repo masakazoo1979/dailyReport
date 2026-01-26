@@ -97,7 +97,7 @@ jobs:
 
       - name: Copy static files for standalone
         run: |
-          cp -r public .next/standalone/
+          [ -d public ] && cp -r public .next/standalone/ || echo "No public folder"
           cp -r .next/static .next/standalone/.next/
 
       - name: Debug - List E2E test files
