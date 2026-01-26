@@ -16,6 +16,14 @@ import { loginSchema } from './validations/auth';
 const useSecureCookies =
   process.env.NODE_ENV === 'production' && !process.env.CI;
 
+// デバッグ用: 環境変数とクッキー設定をログ出力
+console.log('[NextAuth Config] Environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  CI: process.env.CI,
+  useSecureCookies,
+  NEXTAUTH_SECRET_SET: !!process.env.NEXTAUTH_SECRET,
+});
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
   cookies: {
@@ -134,7 +142,8 @@ export const authOptions: NextAuthOptions = {
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development' && !process.env.CI,
+  // CI環境でもデバッグ情報を出力（問題診断用）
+  debug: process.env.NODE_ENV === 'development' || !!process.env.CI,
 };
 
 /**
