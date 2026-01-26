@@ -69,7 +69,10 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        console.log('[NextAuth authorize] Starting authorization attempt');
+
         if (!credentials?.email || !credentials?.password) {
+          console.log('[NextAuth authorize] Missing credentials');
           throw new Error('メールアドレスとパスワードを入力してください');
         }
 
@@ -80,25 +83,46 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!validatedData.success) {
+          console.log(
+            '[NextAuth authorize] Validation failed:',
+            validatedData.error
+          );
           throw new Error('入力内容に誤りがあります');
         }
 
         const { email, password } = validatedData.data;
+        console.log('[NextAuth authorize] Attempting login for:', email);
 
         // ユーザー検索（Salesテーブルから）
-        const sales = await prisma.sales.findUnique({
-          where: { email },
-        });
+        try {
+          const sales = await prisma.sales.findUnique({
+            where: { email },
+          });
+          console.log(
+            '[NextAuth authorize] User found:',
+            !!sales,
+            sales?.email
+          );
 
-        if (!sales) {
-          throw new Error('メールアドレスまたはパスワードが正しくありません');
-        }
+          if (!sales) {
+            console.log('[NextAuth authorize] User not found in database');
+            throw new Error('メールアドレスまたはパスワードが正しくありません');
+          }
 
-        // パスワード検証
-        const isPasswordValid = await bcrypt.compare(password, sales.password);
+          // パスワード検証
+          const isPasswordValid = await bcrypt.compare(
+            password,
+            sales.password
+          );
+          console.log('[NextAuth authorize] Password valid:', isPasswordValid);
 
-        if (!isPasswordValid) {
-          throw new Error('メールアドレスまたはパスワードが正しくありません');
+          if (!isPasswordValid) {
+            console.log('[NextAuth authorize] Password mismatch');
+            throw new Error('メールアドレスまたはパスワードが正しくありません');
+          }
+        } catch (dbError) {
+          console.error('[NextAuth authorize] Database error:', dbError);
+          throw dbError;
         }
 
         // 認証成功 - ユーザー情報を返す
