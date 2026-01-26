@@ -120,20 +120,24 @@ export const authOptions: NextAuthOptions = {
             console.log('[NextAuth authorize] Password mismatch');
             throw new Error('メールアドレスまたはパスワードが正しくありません');
           }
+
+          // 認証成功 - ユーザー情報を返す
+          console.log(
+            '[NextAuth authorize] Login successful for:',
+            sales.email
+          );
+          return {
+            id: sales.salesId.toString(),
+            email: sales.email,
+            name: sales.salesName,
+            role: sales.role,
+            department: sales.department,
+            salesId: sales.salesId,
+          };
         } catch (dbError) {
           console.error('[NextAuth authorize] Database error:', dbError);
           throw dbError;
         }
-
-        // 認証成功 - ユーザー情報を返す
-        return {
-          id: sales.salesId.toString(),
-          email: sales.email,
-          name: sales.salesName,
-          role: sales.role,
-          department: sales.department,
-          salesId: sales.salesId,
-        };
       },
     }),
   ],
