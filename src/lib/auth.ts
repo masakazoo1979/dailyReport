@@ -69,10 +69,11 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        console.log('[NextAuth authorize] Starting authorization attempt');
+        // デバッグ: console.errorを使用（Playwright WebServerがstderrのみ出力するため）
+        console.error('[NextAuth authorize] Starting authorization attempt');
 
         if (!credentials?.email || !credentials?.password) {
-          console.log('[NextAuth authorize] Missing credentials');
+          console.error('[NextAuth authorize] Missing credentials');
           throw new Error('メールアドレスとパスワードを入力してください');
         }
 
@@ -83,7 +84,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!validatedData.success) {
-          console.log(
+          console.error(
             '[NextAuth authorize] Validation failed:',
             validatedData.error
           );
@@ -91,21 +92,21 @@ export const authOptions: NextAuthOptions = {
         }
 
         const { email, password } = validatedData.data;
-        console.log('[NextAuth authorize] Attempting login for:', email);
+        console.error('[NextAuth authorize] Attempting login for:', email);
 
         // ユーザー検索（Salesテーブルから）
         try {
           const sales = await prisma.sales.findUnique({
             where: { email },
           });
-          console.log(
+          console.error(
             '[NextAuth authorize] User found:',
             !!sales,
             sales?.email
           );
 
           if (!sales) {
-            console.log('[NextAuth authorize] User not found in database');
+            console.error('[NextAuth authorize] User not found in database');
             throw new Error('メールアドレスまたはパスワードが正しくありません');
           }
 
@@ -114,15 +115,18 @@ export const authOptions: NextAuthOptions = {
             password,
             sales.password
           );
-          console.log('[NextAuth authorize] Password valid:', isPasswordValid);
+          console.error(
+            '[NextAuth authorize] Password valid:',
+            isPasswordValid
+          );
 
           if (!isPasswordValid) {
-            console.log('[NextAuth authorize] Password mismatch');
+            console.error('[NextAuth authorize] Password mismatch');
             throw new Error('メールアドレスまたはパスワードが正しくありません');
           }
 
           // 認証成功 - ユーザー情報を返す
-          console.log(
+          console.error(
             '[NextAuth authorize] Login successful for:',
             sales.email
           );
