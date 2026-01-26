@@ -43,6 +43,7 @@ export default defineConfig({
       NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'development-secret',
       NODE_ENV: process.env.CI ? 'production' : 'development',
+      CI: process.env.CI || '',
     },
   },
 });
