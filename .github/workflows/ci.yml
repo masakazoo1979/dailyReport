@@ -95,6 +95,11 @@ jobs:
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: test-secret-for-ci-environment-only
 
+      - name: Copy static files for standalone
+        run: |
+          cp -r public .next/standalone/
+          cp -r .next/static .next/standalone/.next/
+
       - name: Debug - List E2E test files
         run: ls -la tests/e2e/
 
