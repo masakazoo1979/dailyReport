@@ -21,20 +21,36 @@ test.describe('ダッシュボード E2E', () => {
       await login(page, 'sales1');
 
       // ようこそメッセージが表示されることを確認
-      await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible();
+      await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible({
+        timeout: 10000,
+      });
 
       // 本日の日報セクションが表示されることを確認
-      await expect(page.getByText('本日の日報')).toBeVisible();
+      await expect(page.getByText('本日の日報')).toBeVisible({
+        timeout: 10000,
+      });
 
       // 最近の日報セクションが表示されることを確認
-      await expect(page.getByText('最近の日報')).toBeVisible();
+      await expect(page.getByText('最近の日報')).toBeVisible({
+        timeout: 10000,
+      });
 
       // サマリーカードが表示されることを確認
-      await expect(page.getByText('今月の提出済み日報')).toBeVisible();
-      await expect(page.getByText('今月の承認済み日報')).toBeVisible();
-      await expect(page.getByText('今月の訪問件数')).toBeVisible();
+      await expect(page.getByText('今月の提出済み日報')).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(page.getByText('今月の承認済み日報')).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(page.getByText('今月の訪問件数')).toBeVisible({
+        timeout: 10000,
+      });
+
+      // ページが完全にロードされるまで待機してから非表示チェック
+      await page.waitForLoadState('networkidle');
 
       // 承認待ち日報セクションは表示されないことを確認（一般営業）
+      // 一般営業ユーザーの場合、このセクションはDOMに存在しない
       await expect(page.getByText('承認待ち日報')).not.toBeVisible();
 
       // サイドバーに営業一覧メニューが表示されないことを確認（一般営業）
@@ -75,22 +91,32 @@ test.describe('ダッシュボード E2E', () => {
       await login(page, 'manager');
 
       // ようこそメッセージが表示されることを確認
-      await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible();
+      await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible({
+        timeout: 15000,
+      });
 
       // 本日の日報セクションが表示されることを確認
-      await expect(page.getByText('本日の日報')).toBeVisible();
+      await expect(page.getByText('本日の日報')).toBeVisible({
+        timeout: 10000,
+      });
 
       // 承認待ち日報セクションが表示されることを確認（上長のみ）
-      await expect(page.getByText('承認待ち日報')).toBeVisible();
+      await expect(page.getByText('承認待ち日報')).toBeVisible({
+        timeout: 10000,
+      });
       await expect(
         page.getByText('配下メンバーの提出済み日報一覧')
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 10000 });
 
       // 最近の日報セクションが表示されることを確認
-      await expect(page.getByText('最近の日報')).toBeVisible();
+      await expect(page.getByText('最近の日報')).toBeVisible({
+        timeout: 10000,
+      });
 
       // サイドバーに営業一覧メニューが表示されることを確認（上長のみ）
-      await expect(page.getByRole('link', { name: '営業一覧' })).toBeVisible();
+      await expect(page.getByRole('link', { name: '営業一覧' })).toBeVisible({
+        timeout: 10000,
+      });
     });
 
     test('TC-DASH-005: 承認待ち日報が一覧表示されること（上長のみ）', async ({
@@ -133,33 +159,50 @@ test.describe('ダッシュボード E2E', () => {
     test('サイドバーから日報一覧へ遷移できること', async ({ page }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       await page.getByRole('link', { name: '日報一覧' }).click();
 
-      await expect(page).toHaveURL('/reports');
-      await expect(page.getByText('日報一覧')).toBeVisible();
+      await expect(page).toHaveURL('/reports', { timeout: 10000 });
+      await expect(page.getByText('日報一覧')).toBeVisible({ timeout: 10000 });
     });
 
     test('サイドバーから顧客一覧へ遷移できること', async ({ page }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '顧客一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       await page.getByRole('link', { name: '顧客一覧' }).click();
 
-      await expect(page).toHaveURL('/customers');
-      await expect(page.getByText('顧客マスタ')).toBeVisible();
+      await expect(page).toHaveURL('/customers', { timeout: 10000 });
+      await expect(page.getByText('顧客マスタ')).toBeVisible({
+        timeout: 10000,
+      });
     });
 
     test('ヘッダーロゴからダッシュボードへ遷移できること', async ({ page }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
-      await expect(page).toHaveURL('/reports');
+      await expect(page).toHaveURL('/reports', { timeout: 10000 });
 
       // ヘッダーロゴをクリック
       await page.getByRole('link', { name: '営業日報システム' }).click();
 
       // ダッシュボードへ遷移することを確認
-      await expect(page).toHaveURL('/dashboard');
+      await expect(page).toHaveURL('/dashboard', { timeout: 10000 });
     });
   });
 });

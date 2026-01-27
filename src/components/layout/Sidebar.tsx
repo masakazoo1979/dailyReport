@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
+import { ROLES } from '@/lib/constants';
 import {
   LayoutDashboard,
   FileText,
@@ -63,7 +64,7 @@ export function Sidebar() {
   const sidebarRef = useRef<HTMLElement>(null);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
-  const isManager = session?.user?.role === 'MANAGER';
+  const isManager = session?.user?.role === ROLES.MANAGER;
 
   const filteredNavItems = navItems.filter(
     (item) => !item.requireManager || isManager
