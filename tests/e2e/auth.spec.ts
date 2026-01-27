@@ -39,8 +39,7 @@ test.describe('認証フロー E2E', () => {
       });
     });
 
-    // TODO: 上長専用セクションの表示問題を調査（Issue #74フォローアップ）
-    test.skip('TC-AUTH-002: 上長でログインできること', async ({ page }) => {
+    test('TC-AUTH-002: 上長でログインできること', async ({ page }) => {
       const user = TEST_USERS.manager;
 
       await page.goto('/login', { waitUntil: 'networkidle' });
