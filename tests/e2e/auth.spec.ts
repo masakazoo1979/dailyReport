@@ -18,10 +18,12 @@ test.describe('認証フロー E2E', () => {
     test('TC-AUTH-001: 一般営業でログインできること', async ({ page }) => {
       const user = TEST_USERS.sales1;
 
-      await page.goto('/login');
+      await page.goto('/login', { waitUntil: 'networkidle' });
 
-      // ログインフォームが表示されることを確認
-      await expect(page.getByText('営業日報システム')).toBeVisible();
+      // ログインフォームが表示されることを確認（hydration完了を待つ）
+      await expect(page.getByText('営業日報システム')).toBeVisible({
+        timeout: 15000,
+      });
       await expect(page.getByText('ログイン')).toBeVisible();
 
       // メールアドレスとパスワードを入力
@@ -42,8 +44,12 @@ test.describe('認証フロー E2E', () => {
     test('TC-AUTH-002: 上長でログインできること', async ({ page }) => {
       const user = TEST_USERS.manager;
 
-      await page.goto('/login');
+      await page.goto('/login', { waitUntil: 'networkidle' });
 
+      // フォームが表示されるまで待機
+      await expect(page.getByLabel('メールアドレス')).toBeVisible({
+        timeout: 15000,
+      });
       await page.getByLabel('メールアドレス').fill(user.email);
       await page.getByLabel('パスワード').fill(user.password);
       await page.getByRole('button', { name: 'ログイン' }).click();
@@ -62,7 +68,10 @@ test.describe('認証フロー E2E', () => {
     test('TC-AUTH-003: 無効な資格情報ではログインできないこと', async ({
       page,
     }) => {
-      await page.goto('/login');
+      await page.goto('/login', { waitUntil: 'networkidle' });
+      await expect(page.getByLabel('メールアドレス')).toBeVisible({
+        timeout: 15000,
+      });
 
       await page.getByLabel('メールアドレス').fill('invalid@example.com');
       await page.getByLabel('パスワード').fill('wrongpassword');
@@ -80,7 +89,10 @@ test.describe('認証フロー E2E', () => {
     test('TC-AUTH-004: メールアドレス未入力でエラーが表示されること', async ({
       page,
     }) => {
-      await page.goto('/login');
+      await page.goto('/login', { waitUntil: 'networkidle' });
+      await expect(page.getByLabel('パスワード')).toBeVisible({
+        timeout: 15000,
+      });
 
       // パスワードのみ入力
       await page.getByLabel('パスワード').fill('password123');
@@ -95,7 +107,10 @@ test.describe('認証フロー E2E', () => {
     test('TC-AUTH-005: パスワード未入力でエラーが表示されること', async ({
       page,
     }) => {
-      await page.goto('/login');
+      await page.goto('/login', { waitUntil: 'networkidle' });
+      await expect(page.getByLabel('メールアドレス')).toBeVisible({
+        timeout: 15000,
+      });
 
       // メールアドレスのみ入力
       await page.getByLabel('メールアドレス').fill('sales1@example.com');
@@ -110,7 +125,10 @@ test.describe('認証フロー E2E', () => {
     test('TC-AUTH-006: 無効なメールアドレス形式でエラーが表示されること', async ({
       page,
     }) => {
-      await page.goto('/login');
+      await page.goto('/login', { waitUntil: 'networkidle' });
+      await expect(page.getByLabel('メールアドレス')).toBeVisible({
+        timeout: 15000,
+      });
 
       await page.getByLabel('メールアドレス').fill('invalid-email');
       await page.getByLabel('パスワード').fill('password123');
@@ -132,7 +150,7 @@ test.describe('認証フロー E2E', () => {
       await page.getByRole('button', { name: 'ログアウト' }).click();
 
       // ログイン画面へ遷移することを確認
-      await expect(page).toHaveURL('/login');
+      await expect(page).toHaveURL(/\/login(\?.*)?$/);
 
       // ログインフォームが表示されることを確認
       await expect(page.getByLabel('メールアドレス')).toBeVisible();
@@ -151,7 +169,7 @@ test.describe('認証フロー E2E', () => {
       await page.goBack();
 
       // ログイン画面にリダイレクトされることを確認
-      await expect(page).toHaveURL('/login');
+      await expect(page).toHaveURL(/\/login(\?.*)?$/);
     });
   });
 
@@ -160,21 +178,24 @@ test.describe('認証フロー E2E', () => {
       page,
     }) => {
       await page.goto('/dashboard');
-      await expect(page).toHaveURL('/login');
+      // クエリパラメータ（callbackUrl）が付く場合があるため正規表現でマッチ
+      await expect(page).toHaveURL(/\/login(\?.*)?$/);
     });
 
     test('TC-AUTH-010: 未認証時に日報一覧にアクセスするとログイン画面へリダイレクトされること', async ({
       page,
     }) => {
       await page.goto('/reports');
-      await expect(page).toHaveURL('/login');
+      // クエリパラメータ（callbackUrl）が付く場合があるため正規表現でマッチ
+      await expect(page).toHaveURL(/\/login(\?.*)?$/);
     });
 
     test('TC-AUTH-011: 未認証時に顧客一覧にアクセスするとログイン画面へリダイレクトされること', async ({
       page,
     }) => {
       await page.goto('/customers');
-      await expect(page).toHaveURL('/login');
+      // クエリパラメータ（callbackUrl）が付く場合があるため正規表現でマッチ
+      await expect(page).toHaveURL(/\/login(\?.*)?$/);
     });
   });
 });
