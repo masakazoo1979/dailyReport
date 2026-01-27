@@ -39,7 +39,12 @@ export type TestUserKey = keyof typeof TEST_USERS;
 export async function login(page: Page, userKey: TestUserKey): Promise<void> {
   const user = TEST_USERS[userKey];
 
-  await page.goto('/login');
+  await page.goto('/login', { waitUntil: 'networkidle' });
+
+  // フォームが表示されるまで待機（hydration完了を待つ）
+  await expect(page.getByLabel('メールアドレス')).toBeVisible({
+    timeout: 15000,
+  });
 
   // ログインフォームに入力
   await page.getByLabel('メールアドレス').fill(user.email);
@@ -49,8 +54,10 @@ export async function login(page: Page, userKey: TestUserKey): Promise<void> {
   await page.getByRole('button', { name: 'ログイン' }).click();
 
   // ダッシュボードへの遷移を待機
-  await expect(page).toHaveURL(/\/(dashboard)?$/);
-  await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible();
+  await expect(page).toHaveURL('/dashboard', { timeout: 15000 });
+  await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible({
+    timeout: 15000,
+  });
 }
 
 /**
@@ -59,7 +66,8 @@ export async function login(page: Page, userKey: TestUserKey): Promise<void> {
  */
 export async function logout(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'ログアウト' }).click();
-  await expect(page).toHaveURL('/login');
+  // ログアウト後のリダイレクトでクエリパラメータが付く場合があるため正規表現でマッチ
+  await expect(page).toHaveURL(/\/login(\?.*)?$/);
 }
 
 /**

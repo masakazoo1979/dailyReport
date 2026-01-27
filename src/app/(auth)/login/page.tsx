@@ -52,7 +52,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError('メールアドレスまたはパスワードが正しくありません');
       } else if (result?.ok) {
-        router.push('/');
+        router.push('/dashboard');
         router.refresh();
       }
     } catch {
