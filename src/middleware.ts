@@ -56,33 +56,51 @@ function isStaticPath(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // デバッグログ（CI環境で確認用）
+  console.error(`[Middleware] Request: ${pathname}`);
+
   // 静的リソースはスキップ
   if (isStaticPath(pathname)) {
+    console.error(`[Middleware] Static path, skipping: ${pathname}`);
     return NextResponse.next();
   }
 
   // 公開パスはスキップ
   if (isPublicPath(pathname)) {
+    console.error(`[Middleware] Public path, skipping: ${pathname}`);
     return NextResponse.next();
   }
 
   // JWTトークンを取得してセッションを検証
+  console.error(
+    `[Middleware] Checking token for: ${pathname}, secret set: ${!!process.env.NEXTAUTH_SECRET}`
+  );
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
   });
+  console.error(
+    `[Middleware] Token result: ${token ? 'authenticated' : 'no token'}`
+  );
 
   // ログインページへのアクセス
   if (pathname === '/login') {
     // 認証済みならダッシュボードにリダイレクト
     if (token) {
+      console.error(
+        `[Middleware] Login page + authenticated -> redirect to /dashboard`
+      );
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
+    console.error(`[Middleware] Login page + unauthenticated -> allow`);
     return NextResponse.next();
   }
 
   // 未認証ユーザーはログインページへリダイレクト
   if (!token) {
+    console.error(
+      `[Middleware] Protected route + no token -> redirect to /login`
+    );
     const loginUrl = new URL('/login', request.url);
     // コールバックURLを設定（ログイン後にリダイレクト）
     loginUrl.searchParams.set('callbackUrl', pathname);
