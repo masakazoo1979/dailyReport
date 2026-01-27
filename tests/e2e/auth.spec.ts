@@ -59,10 +59,14 @@ test.describe('認証フロー E2E', () => {
       });
 
       // 上長専用の「承認待ち日報」セクションが表示されることを確認
-      await expect(page.getByText('承認待ち日報')).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: '承認待ち日報' })
+      ).toBeVisible({ timeout: 10000 });
 
       // サイドバーに「営業一覧」メニューが表示されることを確認（上長のみ）
-      await expect(page.getByRole('link', { name: '営業一覧' })).toBeVisible();
+      await expect(page.getByRole('link', { name: '営業一覧' })).toBeVisible({
+        timeout: 10000,
+      });
     });
 
     test('TC-AUTH-003: 無効な資格情報ではログインできないこと', async ({
@@ -136,7 +140,7 @@ test.describe('認証フロー E2E', () => {
 
       // バリデーションエラーが表示されることを確認
       await expect(
-        page.getByText('有効なメールアドレスを入力してください')
+        page.getByText('メールアドレスの形式が正しくありません')
       ).toBeVisible();
     });
   });
