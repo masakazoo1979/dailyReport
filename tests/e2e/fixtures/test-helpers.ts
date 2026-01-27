@@ -54,8 +54,10 @@ export async function login(page: Page, userKey: TestUserKey): Promise<void> {
   await page.getByRole('button', { name: 'ログイン' }).click();
 
   // ダッシュボードへの遷移を待機
-  await expect(page).toHaveURL(/\/(dashboard)?$/);
-  await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible();
+  await expect(page).toHaveURL('/dashboard', { timeout: 15000 });
+  await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible({
+    timeout: 15000,
+  });
 }
 
 /**

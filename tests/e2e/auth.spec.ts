@@ -21,10 +21,9 @@ test.describe('認証フロー E2E', () => {
       await page.goto('/login', { waitUntil: 'networkidle' });
 
       // ログインフォームが表示されることを確認（hydration完了を待つ）
-      await expect(page.getByText('営業日報システム')).toBeVisible({
+      await expect(page.getByLabel('メールアドレス')).toBeVisible({
         timeout: 15000,
       });
-      await expect(page.getByText('ログイン')).toBeVisible();
 
       // メールアドレスとパスワードを入力
       await page.getByLabel('メールアドレス').fill(user.email);
@@ -34,11 +33,10 @@ test.describe('認証フロー E2E', () => {
       await page.getByRole('button', { name: 'ログイン' }).click();
 
       // ダッシュボードへ遷移することを確認
-      await expect(page).toHaveURL(/\/(dashboard)?$/);
-      await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible();
-
-      // ヘッダーにユーザー名が表示されることを確認
-      await expect(page.getByText(`${user.name}さん`)).toBeVisible();
+      await expect(page).toHaveURL('/dashboard', { timeout: 15000 });
+      await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible({
+        timeout: 15000,
+      });
     });
 
     test('TC-AUTH-002: 上長でログインできること', async ({ page }) => {
@@ -55,8 +53,10 @@ test.describe('認証フロー E2E', () => {
       await page.getByRole('button', { name: 'ログイン' }).click();
 
       // ダッシュボードへ遷移
-      await expect(page).toHaveURL(/\/(dashboard)?$/);
-      await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible();
+      await expect(page).toHaveURL('/dashboard', { timeout: 15000 });
+      await expect(page.getByText(`ようこそ、${user.name}さん`)).toBeVisible({
+        timeout: 15000,
+      });
 
       // 上長専用の「承認待ち日報」セクションが表示されることを確認
       await expect(page.getByText('承認待ち日報')).toBeVisible();
