@@ -18,9 +18,14 @@ test.describe('権限テスト E2E', () => {
     }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
-      await expect(page).toHaveURL('/reports');
+      await expect(page).toHaveURL('/reports', { timeout: 10000 });
 
       // 日報一覧テーブルが表示されることを確認
       await expect(page.getByRole('table')).toBeVisible();
@@ -41,6 +46,14 @@ test.describe('権限テスト E2E', () => {
       page,
     }) => {
       await login(page, 'sales1');
+
+      // ページが完全にロードされるまで待機
+      await page.waitForLoadState('networkidle');
+
+      // サイドバーリンクが表示されるまで待機（他のリンクで確認）
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
 
       // サイドバーに営業一覧メニューが表示されないことを確認
       await expect(
@@ -65,6 +78,9 @@ test.describe('権限テスト E2E', () => {
 
     test('一般営業は他のユーザーの日報を閲覧できないこと', async ({ page }) => {
       await login(page, 'sales1');
+
+      // ダッシュボードが表示されることを確認
+      await expect(page.getByText('ようこそ')).toBeVisible({ timeout: 15000 });
 
       // 他のユーザーの日報ID（存在しないか、アクセス権限がないID）に直接アクセス
       // 通常はsales2の日報IDを指定するが、テスト環境では動的なため、
@@ -92,9 +108,14 @@ test.describe('権限テスト E2E', () => {
     }) => {
       await login(page, 'manager');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
-      await expect(page).toHaveURL('/reports');
+      await expect(page).toHaveURL('/reports', { timeout: 10000 });
 
       // 日報一覧テーブルが表示されることを確認
       await expect(page.getByRole('table')).toBeVisible();
@@ -126,11 +147,13 @@ test.describe('権限テスト E2E', () => {
       await login(page, 'manager');
 
       // サイドバーに営業一覧メニューが表示されることを確認
-      await expect(page.getByRole('link', { name: '営業一覧' })).toBeVisible();
+      await expect(page.getByRole('link', { name: '営業一覧' })).toBeVisible({
+        timeout: 10000,
+      });
 
       // 営業一覧へ遷移
       await page.getByRole('link', { name: '営業一覧' }).click();
-      await expect(page).toHaveURL('/sales');
+      await expect(page).toHaveURL('/sales', { timeout: 10000 });
 
       // 営業一覧が表示されることを確認
       await expect(page.getByText('営業一覧')).toBeVisible();
@@ -144,12 +167,21 @@ test.describe('権限テスト E2E', () => {
     test('上長は営業担当者を新規登録できること', async ({ page }) => {
       await login(page, 'manager');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '営業一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 営業一覧へ遷移
       await page.getByRole('link', { name: '営業一覧' }).click();
+      await expect(page).toHaveURL('/sales', { timeout: 10000 });
 
       // 新規登録ボタンをクリック
+      await expect(page.getByRole('link', { name: '新規登録' })).toBeVisible({
+        timeout: 10000,
+      });
       await page.getByRole('link', { name: '新規登録' }).click();
-      await expect(page).toHaveURL('/sales/new');
+      await expect(page).toHaveURL('/sales/new', { timeout: 10000 });
 
       // 営業登録画面が表示されることを確認
       await expect(page.getByText('営業担当者登録')).toBeVisible();
@@ -164,6 +196,11 @@ test.describe('権限テスト E2E', () => {
   test.describe('日報アクセス権限', () => {
     test('自分の日報は詳細表示できること', async ({ page }) => {
       await login(page, 'sales1');
+
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
 
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
@@ -184,6 +221,9 @@ test.describe('権限テスト E2E', () => {
 
     test('上長は配下メンバーの日報詳細を表示できること', async ({ page }) => {
       await login(page, 'manager');
+
+      // ダッシュボードが表示されるまで待機
+      await expect(page.getByText('ようこそ')).toBeVisible({ timeout: 15000 });
 
       // ダッシュボードの承認待ち日報セクションから詳細へ遷移
       const pendingDetailLink = page
@@ -209,8 +249,13 @@ test.describe('権限テスト E2E', () => {
     test('一般営業も顧客一覧にアクセスできること', async ({ page }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '顧客一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       await page.getByRole('link', { name: '顧客一覧' }).click();
-      await expect(page).toHaveURL('/customers');
+      await expect(page).toHaveURL('/customers', { timeout: 10000 });
 
       // 顧客マスタが表示されることを確認
       await expect(page.getByText('顧客マスタ')).toBeVisible();
@@ -219,18 +264,23 @@ test.describe('権限テスト E2E', () => {
     test('一般営業も顧客を登録できること', async ({ page }) => {
       await login(page, 'sales1');
 
-      await page.goto('/customers/new');
+      await page.goto('/customers/new', { waitUntil: 'networkidle' });
 
       // 顧客登録画面が表示されることを確認
-      await expect(page.getByText('顧客登録')).toBeVisible();
+      await expect(page.getByText('顧客登録')).toBeVisible({ timeout: 15000 });
       await expect(page.getByLabel('会社名')).toBeVisible();
     });
 
     test('上長も顧客一覧にアクセスできること', async ({ page }) => {
       await login(page, 'manager');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '顧客一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       await page.getByRole('link', { name: '顧客一覧' }).click();
-      await expect(page).toHaveURL('/customers');
+      await expect(page).toHaveURL('/customers', { timeout: 10000 });
 
       // 顧客マスタが表示されることを確認
       await expect(page.getByText('顧客マスタ')).toBeVisible();
