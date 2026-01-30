@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
 import { login } from './fixtures/test-helpers';
 
 /**
@@ -12,6 +13,29 @@ import { login } from './fixtures/test-helpers';
  * - TC-REPORT-006: 訪問記録なしでの提出試行
  */
 test.describe('日報作成フロー E2E', () => {
+  // 各テストの前にsales1の今日の日報を削除
+  test.beforeEach(async () => {
+    const prisma = new PrismaClient();
+    try {
+      const sales1 = await prisma.sales.findUnique({
+        where: { email: 'sales1@example.com' },
+      });
+      if (sales1) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        await prisma.dailyReport.deleteMany({
+          where: {
+            salesId: sales1.salesId,
+            reportDate: {
+              gte: today,
+            },
+          },
+        });
+      }
+    } finally {
+      await prisma.$disconnect();
+    }
+  });
   test.describe('日報登録画面', () => {
     test('TC-REPORT-001: 日報新規作成画面が正しく表示されること', async ({
       page,
