@@ -177,10 +177,12 @@ test.describe('権限テスト E2E', () => {
       await expect(page).toHaveURL('/sales', { timeout: 10000 });
 
       // 新規登録ボタンをクリック
-      await expect(page.getByRole('link', { name: '新規登録' })).toBeVisible({
+      await expect(
+        page.getByRole('link', { name: '新規営業担当者登録' })
+      ).toBeVisible({
         timeout: 10000,
       });
-      await page.getByRole('link', { name: '新規登録' }).click();
+      await page.getByRole('link', { name: '新規営業担当者登録' }).click();
       await expect(page).toHaveURL('/sales/new', { timeout: 10000 });
 
       // 営業登録画面が表示されることを確認

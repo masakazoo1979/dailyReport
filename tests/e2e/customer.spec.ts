@@ -42,7 +42,9 @@ test.describe('顧客登録フロー E2E', () => {
       ).toBeVisible();
 
       // 新規登録ボタンが表示されることを確認
-      await expect(page.getByRole('link', { name: '新規登録' })).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: '新規顧客登録' })
+      ).toBeVisible();
     });
 
     test('顧客一覧でフィルタリングができること', async ({ page }) => {
@@ -74,10 +76,12 @@ test.describe('顧客登録フロー E2E', () => {
       await page.getByRole('link', { name: '顧客一覧' }).click();
 
       // 新規登録ボタンをクリック
-      await expect(page.getByRole('link', { name: '新規登録' })).toBeVisible({
+      await expect(
+        page.getByRole('link', { name: '新規顧客登録' })
+      ).toBeVisible({
         timeout: 10000,
       });
-      await page.getByRole('link', { name: '新規登録' }).click();
+      await page.getByRole('link', { name: '新規顧客登録' }).click();
       await expect(page).toHaveURL('/customers/new', { timeout: 10000 });
 
       // 画面タイトルが表示されることを確認

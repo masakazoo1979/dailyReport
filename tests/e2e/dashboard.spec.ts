@@ -26,7 +26,7 @@ test.describe('ダッシュボード E2E', () => {
       });
 
       // 本日の日報セクションが表示されることを確認
-      await expect(page.getByText('本日の日報')).toBeVisible({
+      await expect(page.getByText('本日の日報', { exact: true })).toBeVisible({
         timeout: 10000,
       });
 
@@ -96,7 +96,7 @@ test.describe('ダッシュボード E2E', () => {
       });
 
       // 本日の日報セクションが表示されることを確認
-      await expect(page.getByText('本日の日報')).toBeVisible({
+      await expect(page.getByText('本日の日報', { exact: true })).toBeVisible({
         timeout: 10000,
       });
 

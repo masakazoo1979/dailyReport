@@ -16,6 +16,11 @@ test.describe('日報承認フロー E2E', () => {
       // 上長としてログイン
       await login(page, 'manager');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
       await expect(page).toHaveURL('/reports');
@@ -55,6 +60,11 @@ test.describe('日報承認フロー E2E', () => {
     test('TC-REPORT-015: 上長が日報を差し戻しできること', async ({ page }) => {
       // 上長としてログイン
       await login(page, 'manager');
+
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
 
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
@@ -97,6 +107,11 @@ test.describe('日報承認フロー E2E', () => {
       // 一般営業としてログイン
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
       await expect(page).toHaveURL('/reports');
@@ -124,6 +139,11 @@ test.describe('日報承認フロー E2E', () => {
   test.describe('日報詳細画面', () => {
     test('日報詳細が正しく表示されること', async ({ page }) => {
       await login(page, 'sales1');
+
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
 
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
@@ -158,6 +178,11 @@ test.describe('日報承認フロー E2E', () => {
     test('日報詳細画面からコメントを投稿できること', async ({ page }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
 
@@ -190,6 +215,11 @@ test.describe('日報承認フロー E2E', () => {
     }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();
 
@@ -218,6 +248,11 @@ test.describe('日報承認フロー E2E', () => {
 
     test('提出済み・承認済みの日報は編集できないこと', async ({ page }) => {
       await login(page, 'sales1');
+
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '日報一覧' })).toBeVisible({
+        timeout: 10000,
+      });
 
       // 日報一覧へ遷移
       await page.getByRole('link', { name: '日報一覧' }).click();

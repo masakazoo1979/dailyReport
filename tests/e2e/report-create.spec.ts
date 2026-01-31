@@ -52,10 +52,12 @@ test.describe('日報作成フロー E2E', () => {
       await expect(page).toHaveURL('/reports', { timeout: 10000 });
 
       // 新規登録ボタンをクリック
-      await expect(page.getByRole('link', { name: '新規登録' })).toBeVisible({
+      await expect(
+        page.getByRole('link', { name: '新規日報作成' })
+      ).toBeVisible({
         timeout: 10000,
       });
-      await page.getByRole('link', { name: '新規登録' }).click();
+      await page.getByRole('link', { name: '新規日報作成' }).click();
       await expect(page).toHaveURL('/reports/new', { timeout: 10000 });
 
       // 画面タイトルが表示されることを確認
@@ -147,8 +149,8 @@ test.describe('日報作成フロー E2E', () => {
 
       // エラーメッセージが表示されることを確認
       await expect(
-        page.getByText('訪問記録を1件以上登録してください')
-      ).toBeVisible();
+        page.getByText('日報を提出するには、訪問記録を1件以上追加してください')
+      ).toBeVisible({ timeout: 10000 });
     });
   });
 
