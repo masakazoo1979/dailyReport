@@ -186,10 +186,12 @@ test.describe('権限テスト E2E', () => {
       await expect(page).toHaveURL('/sales/new', { timeout: 10000 });
 
       // 営業登録画面が表示されることを確認
-      await expect(page.getByText('営業担当者登録')).toBeVisible();
+      await expect(page.getByText('営業担当者登録')).toBeVisible({
+        timeout: 10000,
+      });
 
       // フォーム要素が表示されることを確認
-      await expect(page.getByLabel('氏名')).toBeVisible();
+      await expect(page.getByLabel('営業担当者名')).toBeVisible();
       await expect(page.getByLabel('メールアドレス')).toBeVisible();
       await expect(page.getByLabel('パスワード')).toBeVisible();
     });

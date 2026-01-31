@@ -94,7 +94,9 @@ test.describe('顧客登録フロー E2E', () => {
       const timestamp = Date.now();
       await page.getByLabel('会社名').fill(`テスト株式会社${timestamp}`);
       await page.getByLabel('顧客担当者名').fill('テスト太郎');
-      await page.getByLabel('業種').fill('IT');
+      // 業種はセレクトボックスなのでクリックして選択
+      await page.getByLabel('業種').click();
+      await page.getByRole('option', { name: 'IT' }).click();
       await page.getByLabel('電話番号').fill('03-1234-5678');
       await page
         .getByLabel('メールアドレス')
@@ -186,12 +188,13 @@ test.describe('顧客登録フロー E2E', () => {
 
         // 編集画面が表示されることを確認
         await expect(page).toHaveURL(/\/customers\/\d+\/edit$/);
-        await expect(page.getByText('顧客編集')).toBeVisible();
+        await expect(page.getByText('顧客編集')).toBeVisible({
+          timeout: 10000,
+        });
 
-        // 業種を編集
-        const industryInput = page.getByLabel('業種');
-        await industryInput.clear();
-        await industryInput.fill('編集後の業種');
+        // 業種を編集（セレクトボックス）
+        await page.getByLabel('業種').click();
+        await page.getByRole('option', { name: 'サービス' }).click();
 
         // 更新ボタンをクリック
         await page.getByRole('button', { name: '更新' }).click();

@@ -167,7 +167,9 @@ test.describe('ダッシュボード E2E', () => {
       await page.getByRole('link', { name: '日報一覧' }).click();
 
       await expect(page).toHaveURL('/reports', { timeout: 10000 });
-      await expect(page.getByText('日報一覧')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: '日報一覧' })).toBeVisible(
+        { timeout: 10000 }
+      );
     });
 
     test('サイドバーから顧客一覧へ遷移できること', async ({ page }) => {

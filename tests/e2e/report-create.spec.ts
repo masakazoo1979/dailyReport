@@ -66,7 +66,7 @@ test.describe('日報作成フロー E2E', () => {
 
       // フォーム要素が表示されることを確認
       await expect(page.getByLabel('報告日')).toBeVisible();
-      await expect(page.getByText('訪問記録')).toBeVisible();
+      await expect(page.getByText('訪問記録', { exact: true })).toBeVisible();
       await expect(page.getByLabel('課題・相談')).toBeVisible();
       await expect(page.getByLabel('明日の予定')).toBeVisible();
 

@@ -170,8 +170,8 @@ test.describe('日報承認フロー E2E', () => {
         // 明日の予定セクションが表示されることを確認
         await expect(page.getByText('明日の予定')).toBeVisible();
 
-        // コメントセクションが表示されることを確認
-        await expect(page.getByText('コメント')).toBeVisible();
+        // コメントセクションが表示されることを確認（件数付きのタイトル）
+        await expect(page.getByText(/^コメント\s*\(/)).toBeVisible();
       }
     });
 
