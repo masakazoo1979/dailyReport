@@ -16,12 +16,19 @@ test.describe('顧客登録フロー E2E', () => {
     test('TC-CUST-001: 顧客一覧が正しく表示されること', async ({ page }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '顧客一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 顧客一覧へ遷移
       await page.getByRole('link', { name: '顧客一覧' }).click();
-      await expect(page).toHaveURL('/customers');
+      await expect(page).toHaveURL('/customers', { timeout: 10000 });
 
       // 画面タイトルが表示されることを確認
-      await expect(page.getByText('顧客マスタ')).toBeVisible();
+      await expect(page.getByText('顧客マスタ')).toBeVisible({
+        timeout: 10000,
+      });
 
       // 顧客一覧テーブルが表示されることを確認
       await expect(page.getByRole('table')).toBeVisible();
@@ -35,7 +42,9 @@ test.describe('顧客登録フロー E2E', () => {
       ).toBeVisible();
 
       // 新規登録ボタンが表示されることを確認
-      await expect(page.getByRole('link', { name: '新規登録' })).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: '新規顧客登録' })
+      ).toBeVisible();
     });
 
     test('顧客一覧でフィルタリングができること', async ({ page }) => {
@@ -58,22 +67,36 @@ test.describe('顧客登録フロー E2E', () => {
     test('TC-CUST-002: 顧客を新規登録できること', async ({ page }) => {
       await login(page, 'sales1');
 
+      // サイドバーリンクが表示されるまで待機
+      await expect(page.getByRole('link', { name: '顧客一覧' })).toBeVisible({
+        timeout: 10000,
+      });
+
       // 顧客一覧へ遷移
       await page.getByRole('link', { name: '顧客一覧' }).click();
 
       // 新規登録ボタンをクリック
-      await page.getByRole('link', { name: '新規登録' }).click();
-      await expect(page).toHaveURL('/customers/new');
+      await expect(
+        page.getByRole('link', { name: '新規顧客登録' })
+      ).toBeVisible({
+        timeout: 10000,
+      });
+      await page.getByRole('link', { name: '新規顧客登録' }).click();
+      await expect(page).toHaveURL('/customers/new', { timeout: 10000 });
 
       // 画面タイトルが表示されることを確認
-      await expect(page.getByText('顧客登録')).toBeVisible();
-      await expect(page.getByText('新しい顧客を登録します')).toBeVisible();
+      await expect(page.getByText('顧客登録')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('新しい顧客を登録します')).toBeVisible({
+        timeout: 10000,
+      });
 
       // フォームに入力
       const timestamp = Date.now();
       await page.getByLabel('会社名').fill(`テスト株式会社${timestamp}`);
       await page.getByLabel('顧客担当者名').fill('テスト太郎');
-      await page.getByLabel('業種').fill('IT');
+      // 業種はセレクトボックスなのでクリックして選択
+      await page.getByLabel('業種').click();
+      await page.getByRole('option', { name: 'IT' }).click();
       await page.getByLabel('電話番号').fill('03-1234-5678');
       await page
         .getByLabel('メールアドレス')
@@ -84,10 +107,12 @@ test.describe('顧客登録フロー E2E', () => {
       await page.getByRole('button', { name: '登録' }).click();
 
       // 顧客一覧へ遷移することを確認
-      await expect(page).toHaveURL(/\/customers$/);
+      await expect(page).toHaveURL(/\/customers$/, { timeout: 15000 });
 
       // 登録した顧客が一覧に表示されることを確認
-      await expect(page.getByText(`テスト株式会社${timestamp}`)).toBeVisible();
+      await expect(page.getByText(`テスト株式会社${timestamp}`)).toBeVisible({
+        timeout: 10000,
+      });
     });
 
     test('TC-CUST-007: 会社名未入力でエラーが表示されること', async ({
@@ -129,7 +154,10 @@ test.describe('顧客登録フロー E2E', () => {
     }) => {
       await login(page, 'sales1');
 
-      await page.goto('/customers/new');
+      await page.goto('/customers/new', { waitUntil: 'networkidle' });
+
+      // フォームが表示されるまで待機
+      await expect(page.getByLabel('会社名')).toBeVisible({ timeout: 10000 });
 
       // フォームに入力（無効なメールアドレス）
       await page.getByLabel('会社名').fill('テスト株式会社');
@@ -141,8 +169,8 @@ test.describe('顧客登録フロー E2E', () => {
 
       // エラーメッセージが表示されることを確認
       await expect(
-        page.getByText('メールアドレスの形式が正しくありません')
-      ).toBeVisible();
+        page.getByText('メールアドレスの形式が正しくありません。')
+      ).toBeVisible({ timeout: 10000 });
     });
   });
 
@@ -160,12 +188,13 @@ test.describe('顧客登録フロー E2E', () => {
 
         // 編集画面が表示されることを確認
         await expect(page).toHaveURL(/\/customers\/\d+\/edit$/);
-        await expect(page.getByText('顧客編集')).toBeVisible();
+        await expect(page.getByText('顧客編集')).toBeVisible({
+          timeout: 10000,
+        });
 
-        // 業種を編集
-        const industryInput = page.getByLabel('業種');
-        await industryInput.clear();
-        await industryInput.fill('編集後の業種');
+        // 業種を編集（セレクトボックス）
+        await page.getByLabel('業種').click();
+        await page.getByRole('option', { name: 'サービス' }).click();
 
         // 更新ボタンをクリック
         await page.getByRole('button', { name: '更新' }).click();
