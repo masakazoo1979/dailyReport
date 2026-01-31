@@ -2,6 +2,45 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * 入力フィールドコンポーネント
+ *
+ * @description
+ * shadcn/ui ベースの入力フィールドコンポーネント。
+ * テキスト、メール、パスワード、数値など様々なタイプの入力をサポートします。
+ * アクセシビリティに配慮したフォーカス状態とエラー状態の表示を提供します。
+ *
+ * @param props - 入力フィールドのプロパティ
+ * @param props.type - 入力タイプ（text, email, password, number など）
+ * @param props.className - 追加のCSSクラス
+ * @param props.placeholder - プレースホルダーテキスト
+ * @param props.disabled - 無効状態
+ * @param props.aria-invalid - エラー状態を示すアクセシビリティ属性
+ *
+ * @example
+ * 基本的な使用方法
+ * ```tsx
+ * <Input type="text" placeholder="名前を入力" />
+ * ```
+ *
+ * @example
+ * パスワード入力
+ * ```tsx
+ * <Input type="password" placeholder="パスワード" />
+ * ```
+ *
+ * @example
+ * エラー状態
+ * ```tsx
+ * <Input type="email" aria-invalid="true" />
+ * ```
+ *
+ * @example
+ * React Hook Form との連携
+ * ```tsx
+ * <Input {...register('email')} />
+ * ```
+ */
 function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
   return (
     <input
