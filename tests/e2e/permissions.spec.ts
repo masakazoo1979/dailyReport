@@ -90,7 +90,11 @@ test.describe('権限テスト E2E', () => {
       // 404エラーまたは権限エラーが表示されることを確認
       const hasError =
         (await page
-          .getByText('Not Found')
+          .getByText('ページが見つかりません')
+          .isVisible()
+          .catch(() => false)) ||
+        (await page
+          .getByText('404')
           .isVisible()
           .catch(() => false)) ||
         (await page

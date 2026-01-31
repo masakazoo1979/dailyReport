@@ -169,7 +169,7 @@ test.describe('顧客登録フロー E2E', () => {
 
       // エラーメッセージが表示されることを確認
       await expect(
-        page.getByText('メールアドレスの形式が正しくありません')
+        page.getByText('メールアドレスの形式が正しくありません。')
       ).toBeVisible({ timeout: 10000 });
     });
   });
