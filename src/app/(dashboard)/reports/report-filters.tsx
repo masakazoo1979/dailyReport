@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface FilterOption {
   value: string;
@@ -52,6 +53,14 @@ export function ReportFilters({
   const [status, setStatus] = useState(initialStatus);
   const [salesId, setSalesId] = useState(initialSalesId);
 
+  // 期間整合性チェック：開始日 ≦ 終了日
+  const dateError = useMemo(() => {
+    if (startDate && endDate && startDate > endDate) {
+      return '終了日は開始日以降の日付を指定してください。';
+    }
+    return null;
+  }, [startDate, endDate]);
+
   // YYYY/MM/DD形式をYYYY-MM-DD形式に変換
   function convertDisplayToInputDate(displayDate: string): string {
     return displayDate.replace(/\//g, '-');
@@ -59,6 +68,11 @@ export function ReportFilters({
 
   // 検索実行
   const handleSearch = useCallback(() => {
+    // 期間整合性エラーがある場合は検索を実行しない
+    if (dateError) {
+      return;
+    }
+
     const params = new URLSearchParams();
 
     if (startDate) {
@@ -77,7 +91,7 @@ export function ReportFilters({
     params.set('page', '1');
 
     router.push(`/reports?${params.toString()}`);
-  }, [startDate, endDate, status, salesId, router]);
+  }, [startDate, endDate, status, salesId, router, dateError]);
 
   // クリア
   const handleClear = useCallback(() => {
@@ -90,6 +104,13 @@ export function ReportFilters({
 
   return (
     <div className="space-y-4">
+      {/* 期間整合性エラーメッセージ */}
+      {dateError && (
+        <Alert variant="destructive">
+          <AlertDescription>{dateError}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* 期間（開始） */}
         <div className="space-y-2">
