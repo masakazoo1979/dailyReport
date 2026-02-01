@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+
 /**
  * GET /api/auth/csrf-token
  *
  * CSRFトークン取得エンドポイント
- * NextAuth.jsが生成するCSRFトークンを取得する
  *
+ * NextAuth.jsビルトインのCSRF保護機能を使用してトークンを返します。
+ * このエンドポイントはNextAuth.jsの `/api/auth/csrf` と同等の機能を提供します。
+ *
+ * Note: NextAuth.jsは内部的にCSRF保護を実装しているため、
+ * 通常のフォーム送信では追加のCSRFトークン処理は不要です。
+ * このエンドポイントはAPI仕様書との互換性のために提供されています。
+ *
+ * @deprecated NextAuth.jsビルトインの `/api/auth/csrf` の使用を推奨します。
  * @returns CSRFトークン
  */
 export async function GET() {
@@ -26,16 +35,38 @@ export async function GET() {
       );
     }
 
-    // NextAuth.jsのCSRFトークンを取得
-    // Note: getCsrfToken()はクライアントサイドの関数のため、
-    // サーバーサイドでは別のアプローチが必要
-    // NextAuth.jsはビルトインでCSRF保護を提供しているため、
-    // 追加のCSRFトークンは通常不要ですが、API仕様書に従って実装します。
+    // NextAuth.jsのCSRFトークンをクッキーから取得
+    const cookieStore = await cookies();
+    const csrfCookieName =
+      process.env.NODE_ENV === 'production' && !process.env.CI
+        ? '__Host-next-auth.csrf-token'
+        : 'next-auth.csrf-token';
 
-    // 簡易的なCSRFトークンを生成（本番環境ではより強固な実装が必要）
-    const csrfToken = Buffer.from(
-      `${session.user?.email}-${Date.now()}-${Math.random()}`
-    ).toString('base64');
+    const csrfCookie = cookieStore.get(csrfCookieName);
+
+    if (!csrfCookie?.value) {
+      // CSRFトークンが見つからない場合は、NextAuth.jsの内部メカニズムに依存
+      // クライアントは /api/auth/csrf を直接呼び出すことを推奨
+      console.warn(
+        '[CSRF Token API] CSRF cookie not found. Client should use /api/auth/csrf instead.'
+      );
+
+      return NextResponse.json(
+        {
+          data: {
+            csrf_token: null,
+            message:
+              'CSRFトークンはNextAuth.jsによって自動管理されています。' +
+              '/api/auth/csrf を使用してください。',
+          },
+        },
+        { status: 200 }
+      );
+    }
+
+    // NextAuth.jsのCSRFトークンは "token|hash" 形式で保存されている
+    // トークン部分のみを返す
+    const csrfToken = csrfCookie.value.split('|')[0];
 
     return NextResponse.json(
       {
