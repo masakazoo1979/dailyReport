@@ -175,7 +175,6 @@ setup-cloudsql: ## Create Cloud SQL instance
 			--region=$(REGION) \
 			--storage-auto-increase \
 			--backup-start-time=03:00 \
-			--enable-bin-log \
 			--project=$(PROJECT_ID); \
 		echo "$(GREEN)Cloud SQL instance created successfully!$(NC)"; \
 	fi

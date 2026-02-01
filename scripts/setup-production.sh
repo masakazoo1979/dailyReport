@@ -12,8 +12,8 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
-PROJECT_ID="claudecode1-482612"
+# Configuration (can be overridden with environment variables)
+PROJECT_ID="${GCP_PROJECT_ID:-claudecode1-482612}"
 REGION="asia-northeast1"
 SQL_INSTANCE="daily-report-db"
 SQL_DATABASE="daily_report"
@@ -92,8 +92,8 @@ if [ "$DB_PASSWORD" != "$DB_PASSWORD_CONFIRM" ]; then
     exit 1
 fi
 
-if [ ${#DB_PASSWORD} -lt 8 ]; then
-    echo -e "${RED}Error: Password must be at least 8 characters${NC}"
+if [ ${#DB_PASSWORD} -lt 12 ]; then
+    echo -e "${RED}Error: Password must be at least 12 characters${NC}"
     exit 1
 fi
 
