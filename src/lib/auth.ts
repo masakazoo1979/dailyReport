@@ -157,18 +157,18 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       // 初回ログイン時にユーザー情報をトークンに追加
       if (user) {
-        token.salesId = (user as any).salesId;
-        token.role = (user as any).role;
-        token.department = (user as any).department;
+        token.salesId = user.salesId;
+        token.role = user.role;
+        token.department = user.department;
       }
       return token;
     },
     async session({ session, token }) {
       // セッションにカスタムフィールドを追加
       if (session.user) {
-        (session.user as any).salesId = token.salesId;
-        (session.user as any).role = token.role;
-        (session.user as any).department = token.department;
+        session.user.salesId = token.salesId as number;
+        session.user.role = token.role as string;
+        session.user.department = token.department as string;
       }
       return session;
     },
