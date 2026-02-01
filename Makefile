@@ -5,6 +5,16 @@ SERVICE_NAME := daily-report
 IMAGE_NAME := gcr.io/$(PROJECT_ID)/$(SERVICE_NAME)
 PORT := 3000
 
+# Cloud SQL settings
+SQL_INSTANCE := daily-report-db
+SQL_DATABASE := daily_report
+SQL_USER := daily_report_user
+SQL_TIER := db-f1-micro
+
+# Service Account settings
+SA_NAME := github-actions
+SA_EMAIL := $(SA_NAME)@$(PROJECT_ID).iam.gserviceaccount.com
+
 # Colors for output
 BLUE := \033[0;34m
 GREEN := \033[0;32m
@@ -148,3 +158,147 @@ clean: ## Clean build artifacts
 .PHONY: ci
 ci: install lint type-check test build ## Run CI checks locally
 	@echo "$(GREEN)CI checks passed!$(NC)"
+
+# ================================
+# Production Setup Commands
+# ================================
+
+.PHONY: setup-cloudsql
+setup-cloudsql: ## Create Cloud SQL instance
+	@echo "$(BLUE)Creating Cloud SQL instance...$(NC)"
+	@if gcloud sql instances describe $(SQL_INSTANCE) --project=$(PROJECT_ID) > /dev/null 2>&1; then \
+		echo "$(YELLOW)Cloud SQL instance $(SQL_INSTANCE) already exists$(NC)"; \
+	else \
+		gcloud sql instances create $(SQL_INSTANCE) \
+			--database-version=POSTGRES_16 \
+			--tier=$(SQL_TIER) \
+			--region=$(REGION) \
+			--storage-auto-increase \
+			--backup-start-time=03:00 \
+			--enable-bin-log \
+			--project=$(PROJECT_ID); \
+		echo "$(GREEN)Cloud SQL instance created successfully!$(NC)"; \
+	fi
+
+.PHONY: setup-db
+setup-db: ## Create database and user (requires DB_PASSWORD env var)
+	@echo "$(BLUE)Creating database and user...$(NC)"
+	@if [ -z "$(DB_PASSWORD)" ]; then \
+		echo "$(YELLOW)Error: DB_PASSWORD environment variable is required$(NC)"; \
+		exit 1; \
+	fi
+	@gcloud sql databases create $(SQL_DATABASE) \
+		--instance=$(SQL_INSTANCE) \
+		--project=$(PROJECT_ID) 2>/dev/null || echo "$(YELLOW)Database $(SQL_DATABASE) may already exist$(NC)"
+	@gcloud sql users create $(SQL_USER) \
+		--instance=$(SQL_INSTANCE) \
+		--password=$(DB_PASSWORD) \
+		--project=$(PROJECT_ID) 2>/dev/null || echo "$(YELLOW)User $(SQL_USER) may already exist$(NC)"
+	@echo "$(GREEN)Database setup complete!$(NC)"
+
+.PHONY: setup-secrets
+setup-secrets: ## Register secrets in Secret Manager (requires DATABASE_URL, SESSION_SECRET env vars)
+	@echo "$(BLUE)Setting up Secret Manager...$(NC)"
+	@if [ -z "$(DATABASE_URL)" ] || [ -z "$(SESSION_SECRET)" ]; then \
+		echo "$(YELLOW)Error: DATABASE_URL and SESSION_SECRET environment variables are required$(NC)"; \
+		exit 1; \
+	fi
+	@echo -n "$(DATABASE_URL)" | gcloud secrets create DATABASE_URL \
+		--data-file=- \
+		--replication-policy="automatic" \
+		--project=$(PROJECT_ID) 2>/dev/null || \
+		(echo -n "$(DATABASE_URL)" | gcloud secrets versions add DATABASE_URL \
+			--data-file=- \
+			--project=$(PROJECT_ID) && echo "$(YELLOW)Updated existing DATABASE_URL secret$(NC)")
+	@echo -n "$(SESSION_SECRET)" | gcloud secrets create SESSION_SECRET \
+		--data-file=- \
+		--replication-policy="automatic" \
+		--project=$(PROJECT_ID) 2>/dev/null || \
+		(echo -n "$(SESSION_SECRET)" | gcloud secrets versions add SESSION_SECRET \
+			--data-file=- \
+			--project=$(PROJECT_ID) && echo "$(YELLOW)Updated existing SESSION_SECRET secret$(NC)")
+	@echo "$(GREEN)Secrets registered successfully!$(NC)"
+
+.PHONY: setup-service-account
+setup-service-account: ## Create service account for GitHub Actions
+	@echo "$(BLUE)Creating service account for GitHub Actions...$(NC)"
+	@gcloud iam service-accounts create $(SA_NAME) \
+		--display-name="GitHub Actions" \
+		--project=$(PROJECT_ID) 2>/dev/null || echo "$(YELLOW)Service account $(SA_NAME) may already exist$(NC)"
+	@echo "$(BLUE)Granting necessary roles...$(NC)"
+	@gcloud projects add-iam-policy-binding $(PROJECT_ID) \
+		--member="serviceAccount:$(SA_EMAIL)" \
+		--role="roles/run.admin" --quiet
+	@gcloud projects add-iam-policy-binding $(PROJECT_ID) \
+		--member="serviceAccount:$(SA_EMAIL)" \
+		--role="roles/storage.admin" --quiet
+	@gcloud projects add-iam-policy-binding $(PROJECT_ID) \
+		--member="serviceAccount:$(SA_EMAIL)" \
+		--role="roles/iam.serviceAccountUser" --quiet
+	@gcloud projects add-iam-policy-binding $(PROJECT_ID) \
+		--member="serviceAccount:$(SA_EMAIL)" \
+		--role="roles/cloudsql.client" --quiet
+	@echo "$(GREEN)Service account setup complete!$(NC)"
+
+.PHONY: setup-secret-access
+setup-secret-access: ## Grant secret access to Cloud Run service account
+	@echo "$(BLUE)Granting secret access to Cloud Run...$(NC)"
+	@PROJECT_NUMBER=$$(gcloud projects describe $(PROJECT_ID) --format='value(projectNumber)') && \
+	gcloud secrets add-iam-policy-binding DATABASE_URL \
+		--member="serviceAccount:$$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+		--role="roles/secretmanager.secretAccessor" \
+		--project=$(PROJECT_ID) --quiet && \
+	gcloud secrets add-iam-policy-binding SESSION_SECRET \
+		--member="serviceAccount:$$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+		--role="roles/secretmanager.secretAccessor" \
+		--project=$(PROJECT_ID) --quiet
+	@echo "$(GREEN)Secret access granted!$(NC)"
+
+.PHONY: setup-monitoring
+setup-monitoring: ## Enable Cloud Logging and Monitoring APIs
+	@echo "$(BLUE)Enabling Cloud Logging and Monitoring...$(NC)"
+	@gcloud services enable logging.googleapis.com --project=$(PROJECT_ID)
+	@gcloud services enable monitoring.googleapis.com --project=$(PROJECT_ID)
+	@gcloud services enable cloudtrace.googleapis.com --project=$(PROJECT_ID)
+	@echo "$(GREEN)Monitoring services enabled!$(NC)"
+
+.PHONY: create-sa-key
+create-sa-key: ## Create service account key for GitHub Secrets
+	@echo "$(BLUE)Creating service account key...$(NC)"
+	@gcloud iam service-accounts keys create gcp-sa-key.json \
+		--iam-account=$(SA_EMAIL) \
+		--project=$(PROJECT_ID)
+	@echo "$(GREEN)Key saved to gcp-sa-key.json$(NC)"
+	@echo "$(YELLOW)IMPORTANT: Add the contents of gcp-sa-key.json to GitHub Secrets as GCP_SA_KEY$(NC)"
+	@echo "$(YELLOW)IMPORTANT: Delete gcp-sa-key.json after adding to GitHub Secrets$(NC)"
+
+.PHONY: setup-production
+setup-production: setup-cloudsql setup-service-account setup-monitoring ## Full production setup (requires DB_PASSWORD, DATABASE_URL, SESSION_SECRET env vars)
+	@echo "$(BLUE)Running full production setup...$(NC)"
+	@if [ -n "$(DB_PASSWORD)" ]; then $(MAKE) setup-db; fi
+	@if [ -n "$(DATABASE_URL)" ] && [ -n "$(SESSION_SECRET)" ]; then \
+		$(MAKE) setup-secrets; \
+		$(MAKE) setup-secret-access; \
+	fi
+	@echo "$(GREEN)Production setup complete!$(NC)"
+	@echo ""
+	@echo "$(BLUE)Next steps:$(NC)"
+	@echo "  1. Run 'make create-sa-key' to generate the service account key"
+	@echo "  2. Add the key contents to GitHub Secrets as GCP_SA_KEY"
+	@echo "  3. Run 'make deploy-full' to deploy the application"
+
+.PHONY: verify-setup
+verify-setup: ## Verify production setup status
+	@echo "$(BLUE)Verifying production setup...$(NC)"
+	@echo ""
+	@echo "Cloud SQL Instance:"
+	@gcloud sql instances describe $(SQL_INSTANCE) --project=$(PROJECT_ID) --format="table(name,state,region)" 2>/dev/null || echo "  $(YELLOW)Not found$(NC)"
+	@echo ""
+	@echo "Secrets:"
+	@gcloud secrets list --project=$(PROJECT_ID) --filter="name:(DATABASE_URL OR SESSION_SECRET)" --format="table(name,replication.automatic)" 2>/dev/null || echo "  $(YELLOW)None found$(NC)"
+	@echo ""
+	@echo "Service Account:"
+	@gcloud iam service-accounts describe $(SA_EMAIL) --project=$(PROJECT_ID) --format="table(email,displayName)" 2>/dev/null || echo "  $(YELLOW)Not found$(NC)"
+	@echo ""
+	@echo "Cloud Run Service:"
+	@gcloud run services describe $(SERVICE_NAME) --region=$(REGION) --project=$(PROJECT_ID) --format="table(status.url)" 2>/dev/null || echo "  $(YELLOW)Not deployed$(NC)"
