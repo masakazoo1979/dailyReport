@@ -18,7 +18,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/features/status-badge';
 
 /**
  * ダッシュボード画面 (S-002)
@@ -320,25 +320,4 @@ export default async function DashboardPage() {
       </div>
     );
   }
-}
-
-/**
- * ステータスに応じたバッジコンポーネント
- */
-function StatusBadge({ status }: { status: string }) {
-  const variantMap: Record<
-    string,
-    'default' | 'secondary' | 'destructive' | 'outline'
-  > = {
-    [REPORT_STATUSES.DRAFT]: 'outline',
-    [REPORT_STATUSES.SUBMITTED]: 'secondary',
-    [REPORT_STATUSES.APPROVED]: 'default',
-    [REPORT_STATUSES.REJECTED]: 'destructive',
-  };
-
-  return (
-    <Badge variant={variantMap[status] || 'outline'} className="shrink-0">
-      {status}
-    </Badge>
-  );
 }
