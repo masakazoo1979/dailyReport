@@ -27,8 +27,19 @@ test.describe('権限テスト E2E', () => {
       await page.getByRole('link', { name: '日報一覧' }).click();
       await expect(page).toHaveURL('/reports', { timeout: 10000 });
 
+      // ページのロードが完全に完了するまで待機
+      await page.waitForLoadState('networkidle');
+
       // 日報一覧テーブルが表示されることを確認
-      await expect(page.getByRole('table')).toBeVisible();
+      await expect(page.getByRole('table')).toBeVisible({ timeout: 15000 });
+
+      // テーブルボディが存在することを確認（データロード完了の指標）
+      const tbody = page.locator('tbody');
+      await expect(tbody).toBeVisible({ timeout: 15000 });
+
+      // データロード完了を待つため、少し待機
+      // （テーブルが空の場合でも正しく動作するように）
+      await page.waitForTimeout(500);
 
       // 自分の名前が表示されることを確認（日報が存在する場合）
       const rows = page.locator('tbody tr');
@@ -38,7 +49,8 @@ test.describe('権限テスト E2E', () => {
       if (rowCount > 0) {
         // 一般営業は自分の日報のみ表示されるため、
         // 他のユーザー名（佐藤 花子など）は表示されないことを確認
-        await expect(page.getByText('佐藤 花子')).not.toBeVisible();
+        // テーブル内を明示的に指定して検索
+        await expect(tbody.getByText('佐藤 花子')).not.toBeVisible();
       }
     });
 
@@ -121,19 +133,29 @@ test.describe('権限テスト E2E', () => {
       await page.getByRole('link', { name: '日報一覧' }).click();
       await expect(page).toHaveURL('/reports', { timeout: 10000 });
 
+      // ページのロードが完全に完了するまで待機
+      await page.waitForLoadState('networkidle');
+
       // 日報一覧テーブルが表示されることを確認
-      await expect(page.getByRole('table')).toBeVisible();
+      await expect(page.getByRole('table')).toBeVisible({ timeout: 15000 });
+
+      // テーブルボディが存在することを確認（データロード完了の指標）
+      const tbody = page.locator('tbody');
+      await expect(tbody).toBeVisible({ timeout: 15000 });
+
+      // データロード完了を待つため、少し待機
+      await page.waitForTimeout(500);
 
       // 配下メンバーの日報が表示されることを確認
       // （上長は自分と配下メンバーの日報を閲覧可能）
       // テストデータの状態によっては表示されない場合もあるため、
       // 少なくとも日報一覧が正常に表示されていることを確認
       const hasSubordinateReport =
-        (await page
+        (await tbody
           .getByText('鈴木 一郎')
           .isVisible()
           .catch(() => false)) ||
-        (await page
+        (await tbody
           .getByText('佐藤 花子')
           .isVisible()
           .catch(() => false));
