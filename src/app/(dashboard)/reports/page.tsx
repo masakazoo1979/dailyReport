@@ -230,27 +230,23 @@ export default async function ReportsPage({
                 <Table aria-label="日報一覧">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>
-                        <SortableHeader
-                          label="日付"
-                          field="reportDate"
-                          currentSort={sortBy}
-                          currentOrder={sortOrder}
-                          params={params}
-                        />
-                      </TableHead>
+                      <SortableTableHead
+                        label="日付"
+                        field="reportDate"
+                        currentSort={sortBy}
+                        currentOrder={sortOrder}
+                        params={params}
+                      />
                       {user.role === ROLES.MANAGER && (
                         <TableHead>営業担当者</TableHead>
                       )}
-                      <TableHead>
-                        <SortableHeader
-                          label="ステータス"
-                          field="status"
-                          currentSort={sortBy}
-                          currentOrder={sortOrder}
-                          params={params}
-                        />
-                      </TableHead>
+                      <SortableTableHead
+                        label="ステータス"
+                        field="status"
+                        currentSort={sortBy}
+                        currentOrder={sortOrder}
+                        params={params}
+                      />
                       <TableHead>訪問件数</TableHead>
                       <TableHead>操作</TableHead>
                     </TableRow>
@@ -322,9 +318,10 @@ export default async function ReportsPage({
 }
 
 /**
- * ソート可能なヘッダー
+ * ソート可能なテーブルヘッダー
+ * アクセシビリティ対応: aria-sort属性とスクリーンリーダー用テキストを含む
  */
-function SortableHeader({
+function SortableTableHead({
   label,
   field,
   currentSort,
@@ -346,16 +343,32 @@ function SortableHeader({
     page: '1',
   });
 
+  // aria-sort属性の値を決定
+  const ariaSortValue = isActive
+    ? currentOrder === 'desc'
+      ? 'descending'
+      : 'ascending'
+    : 'none';
+
   return (
-    <Link
-      href={`/reports?${queryString}`}
-      className="flex items-center gap-1 hover:text-foreground"
-    >
-      {label}
-      {isActive && (
-        <span className="text-xs">{currentOrder === 'desc' ? '▼' : '▲'}</span>
-      )}
-    </Link>
+    <TableHead aria-sort={ariaSortValue}>
+      <Link
+        href={`/reports?${queryString}`}
+        className="flex items-center gap-1 hover:text-foreground"
+      >
+        {label}
+        {isActive && (
+          <>
+            <span className="text-xs" aria-hidden="true">
+              {currentOrder === 'desc' ? '▼' : '▲'}
+            </span>
+            <span className="sr-only">
+              {currentOrder === 'desc' ? '（降順）' : '（昇順）'}
+            </span>
+          </>
+        )}
+      </Link>
+    </TableHead>
   );
 }
 
