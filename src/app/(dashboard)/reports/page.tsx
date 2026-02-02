@@ -52,6 +52,27 @@ interface SearchParams {
 
 const PAGE_SIZE = 10;
 
+/**
+ * URLパラメータを構築するヘルパー関数
+ */
+function buildQueryParams(
+  params: SearchParams,
+  overrides: Partial<SearchParams>
+): string {
+  const queryParams = new URLSearchParams();
+  const merged = { ...params, ...overrides };
+
+  if (merged.startDate) queryParams.set('startDate', merged.startDate);
+  if (merged.endDate) queryParams.set('endDate', merged.endDate);
+  if (merged.status) queryParams.set('status', merged.status);
+  if (merged.salesId) queryParams.set('salesId', merged.salesId);
+  if (merged.sortBy) queryParams.set('sortBy', merged.sortBy);
+  if (merged.sortOrder) queryParams.set('sortOrder', merged.sortOrder);
+  if (merged.page) queryParams.set('page', merged.page);
+
+  return queryParams.toString();
+}
+
 export default async function ReportsPage({
   searchParams,
 }: {
@@ -319,18 +340,15 @@ function SortableHeader({
   const isActive = currentSort === field;
   const nextOrder = isActive && currentOrder === 'desc' ? 'asc' : 'desc';
 
-  const queryParams = new URLSearchParams();
-  if (params.startDate) queryParams.set('startDate', params.startDate);
-  if (params.endDate) queryParams.set('endDate', params.endDate);
-  if (params.status) queryParams.set('status', params.status);
-  if (params.salesId) queryParams.set('salesId', params.salesId);
-  queryParams.set('sortBy', field);
-  queryParams.set('sortOrder', nextOrder);
-  queryParams.set('page', '1');
+  const queryString = buildQueryParams(params, {
+    sortBy: field,
+    sortOrder: nextOrder,
+    page: '1',
+  });
 
   return (
     <Link
-      href={`/reports?${queryParams.toString()}`}
+      href={`/reports?${queryString}`}
       className="flex items-center gap-1 hover:text-foreground"
     >
       {label}
@@ -354,15 +372,7 @@ function Pagination({
   params: SearchParams;
 }) {
   const buildPageUrl = (page: number) => {
-    const queryParams = new URLSearchParams();
-    if (params.startDate) queryParams.set('startDate', params.startDate);
-    if (params.endDate) queryParams.set('endDate', params.endDate);
-    if (params.status) queryParams.set('status', params.status);
-    if (params.salesId) queryParams.set('salesId', params.salesId);
-    if (params.sortBy) queryParams.set('sortBy', params.sortBy);
-    if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
-    queryParams.set('page', page.toString());
-    return `/reports?${queryParams.toString()}`;
+    return `/reports?${buildQueryParams(params, { page: page.toString() })}`;
   };
 
   // 表示するページ番号を計算
