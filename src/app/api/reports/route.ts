@@ -5,6 +5,7 @@ import { authOptions, SessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createReportSchema } from '@/lib/validations/report';
 import { REPORT_STATUSES } from '@/lib/constants';
+import { getAllowedSalesIds } from '@/lib/utils/cache';
 
 /**
  * 日報作成API
@@ -138,18 +139,12 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'reportDate';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    // 権限に基づいた検索条件の構築
+    // 権限に基づいた検索条件の構築（キャッシュ利用で効率化）
     let salesIdCondition: number | { in: number[] } | undefined;
 
     if (user.role === '上長') {
-      // 上長の場合: 配下メンバー + 自分
-      const subordinates = await prisma.sales.findMany({
-        where: { managerId: user.salesId },
-        select: { salesId: true },
-      });
-
-      const subordinateIds = subordinates.map((s) => s.salesId);
-      const allowedIds = [user.salesId, ...subordinateIds];
+      // 上長の場合: 配下メンバー + 自分（キャッシュ利用）
+      const allowedIds = await getAllowedSalesIds(user.salesId);
 
       if (salesId && allowedIds.includes(parseInt(salesId, 10))) {
         salesIdCondition = parseInt(salesId, 10);

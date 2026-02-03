@@ -9,6 +9,7 @@ import {
   getFirstDayOfMonthJST,
   getLastDayOfMonthJST,
 } from '@/lib/utils';
+import { getAllowedSalesIds, getSalesListForManager } from '@/lib/utils/cache';
 import {
   Card,
   CardContent,
@@ -17,7 +18,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/features/status-badge';
 import {
   Table,
   TableBody,
@@ -50,6 +51,27 @@ interface SearchParams {
 }
 
 const PAGE_SIZE = 10;
+
+/**
+ * URLパラメータを構築するヘルパー関数
+ */
+function buildQueryParams(
+  params: SearchParams,
+  overrides: Partial<SearchParams>
+): string {
+  const queryParams = new URLSearchParams();
+  const merged = { ...params, ...overrides };
+
+  if (merged.startDate) queryParams.set('startDate', merged.startDate);
+  if (merged.endDate) queryParams.set('endDate', merged.endDate);
+  if (merged.status) queryParams.set('status', merged.status);
+  if (merged.salesId) queryParams.set('salesId', merged.salesId);
+  if (merged.sortBy) queryParams.set('sortBy', merged.sortBy);
+  if (merged.sortOrder) queryParams.set('sortOrder', merged.sortOrder);
+  if (merged.page) queryParams.set('page', merged.page);
+
+  return queryParams.toString();
+}
 
 export default async function ReportsPage({
   searchParams,
@@ -84,18 +106,8 @@ export default async function ReportsPage({
     let salesIdCondition: number | { in: number[] } | undefined;
 
     if (user.role === ROLES.MANAGER) {
-      // 上長の場合: 配下メンバー + 自分
-      const subordinates = await prisma.sales.findMany({
-        where: {
-          managerId: user.salesId,
-        },
-        select: {
-          salesId: true,
-        },
-      });
-
-      const subordinateIds = subordinates.map((s) => s.salesId);
-      const allowedIds = [user.salesId, ...subordinateIds];
+      // 上長の場合: 配下メンバー + 自分（キャッシュ利用）
+      const allowedIds = await getAllowedSalesIds(user.salesId);
 
       if (salesId && allowedIds.includes(parseInt(salesId, 10))) {
         // 特定の営業担当者でフィルタ
@@ -149,20 +161,9 @@ export default async function ReportsPage({
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
       }),
-      // 営業担当者リスト取得（上長のみ使用）
+      // 営業担当者リスト取得（上長のみ使用、キャッシュ利用）
       user.role === ROLES.MANAGER
-        ? prisma.sales.findMany({
-            where: {
-              OR: [{ salesId: user.salesId }, { managerId: user.salesId }],
-            },
-            select: {
-              salesId: true,
-              salesName: true,
-            },
-            orderBy: {
-              salesName: 'asc',
-            },
-          })
+        ? getSalesListForManager(user.salesId)
         : Promise.resolve([]),
     ]);
 
@@ -226,30 +227,26 @@ export default async function ReportsPage({
           <CardContent>
             {reports.length > 0 ? (
               <>
-                <Table>
+                <Table aria-label="日報一覧">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>
-                        <SortableHeader
-                          label="日付"
-                          field="reportDate"
-                          currentSort={sortBy}
-                          currentOrder={sortOrder}
-                          params={params}
-                        />
-                      </TableHead>
+                      <SortableTableHead
+                        label="日付"
+                        field="reportDate"
+                        currentSort={sortBy}
+                        currentOrder={sortOrder}
+                        params={params}
+                      />
                       {user.role === ROLES.MANAGER && (
                         <TableHead>営業担当者</TableHead>
                       )}
-                      <TableHead>
-                        <SortableHeader
-                          label="ステータス"
-                          field="status"
-                          currentSort={sortBy}
-                          currentOrder={sortOrder}
-                          params={params}
-                        />
-                      </TableHead>
+                      <SortableTableHead
+                        label="ステータス"
+                        field="status"
+                        currentSort={sortBy}
+                        currentOrder={sortOrder}
+                        params={params}
+                      />
                       <TableHead>訪問件数</TableHead>
                       <TableHead>操作</TableHead>
                     </TableRow>
@@ -269,7 +266,10 @@ export default async function ReportsPage({
                         <TableCell>{report._count.visits}件</TableCell>
                         <TableCell>
                           <Button variant="outline" size="sm" asChild>
-                            <Link href={`/reports/${report.reportId}`}>
+                            <Link
+                              href={`/reports/${report.reportId}`}
+                              aria-label={`${formatDate(report.reportDate)}の日報を詳細表示`}
+                            >
                               詳細
                             </Link>
                           </Button>
@@ -318,30 +318,10 @@ export default async function ReportsPage({
 }
 
 /**
- * ステータスに応じたバッジコンポーネント
+ * ソート可能なテーブルヘッダー
+ * アクセシビリティ対応: aria-sort属性とスクリーンリーダー用テキストを含む
  */
-function StatusBadge({ status }: { status: string }) {
-  const variantMap: Record<
-    string,
-    'default' | 'secondary' | 'destructive' | 'outline'
-  > = {
-    [REPORT_STATUSES.DRAFT]: 'outline',
-    [REPORT_STATUSES.SUBMITTED]: 'secondary',
-    [REPORT_STATUSES.APPROVED]: 'default',
-    [REPORT_STATUSES.REJECTED]: 'destructive',
-  };
-
-  return (
-    <Badge variant={variantMap[status] || 'outline'} className="shrink-0">
-      {status}
-    </Badge>
-  );
-}
-
-/**
- * ソート可能なヘッダー
- */
-function SortableHeader({
+function SortableTableHead({
   label,
   field,
   currentSort,
@@ -357,25 +337,38 @@ function SortableHeader({
   const isActive = currentSort === field;
   const nextOrder = isActive && currentOrder === 'desc' ? 'asc' : 'desc';
 
-  const queryParams = new URLSearchParams();
-  if (params.startDate) queryParams.set('startDate', params.startDate);
-  if (params.endDate) queryParams.set('endDate', params.endDate);
-  if (params.status) queryParams.set('status', params.status);
-  if (params.salesId) queryParams.set('salesId', params.salesId);
-  queryParams.set('sortBy', field);
-  queryParams.set('sortOrder', nextOrder);
-  queryParams.set('page', '1');
+  const queryString = buildQueryParams(params, {
+    sortBy: field,
+    sortOrder: nextOrder,
+    page: '1',
+  });
+
+  // aria-sort属性の値を決定
+  const ariaSortValue = isActive
+    ? currentOrder === 'desc'
+      ? 'descending'
+      : 'ascending'
+    : 'none';
 
   return (
-    <Link
-      href={`/reports?${queryParams.toString()}`}
-      className="flex items-center gap-1 hover:text-foreground"
-    >
-      {label}
-      {isActive && (
-        <span className="text-xs">{currentOrder === 'desc' ? '▼' : '▲'}</span>
-      )}
-    </Link>
+    <TableHead aria-sort={ariaSortValue}>
+      <Link
+        href={`/reports?${queryString}`}
+        className="flex items-center gap-1 hover:text-foreground"
+      >
+        {label}
+        {isActive && (
+          <>
+            <span className="text-xs" aria-hidden="true">
+              {currentOrder === 'desc' ? '▼' : '▲'}
+            </span>
+            <span className="sr-only">
+              {currentOrder === 'desc' ? '（降順）' : '（昇順）'}
+            </span>
+          </>
+        )}
+      </Link>
+    </TableHead>
   );
 }
 
@@ -392,15 +385,7 @@ function Pagination({
   params: SearchParams;
 }) {
   const buildPageUrl = (page: number) => {
-    const queryParams = new URLSearchParams();
-    if (params.startDate) queryParams.set('startDate', params.startDate);
-    if (params.endDate) queryParams.set('endDate', params.endDate);
-    if (params.status) queryParams.set('status', params.status);
-    if (params.salesId) queryParams.set('salesId', params.salesId);
-    if (params.sortBy) queryParams.set('sortBy', params.sortBy);
-    if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
-    queryParams.set('page', page.toString());
-    return `/reports?${queryParams.toString()}`;
+    return `/reports?${buildQueryParams(params, { page: page.toString() })}`;
   };
 
   // 表示するページ番号を計算
@@ -421,12 +406,17 @@ function Pagination({
   };
 
   return (
-    <div className="mt-4 flex items-center justify-center gap-2">
+    <nav
+      className="mt-4 flex items-center justify-center gap-2"
+      role="navigation"
+      aria-label="ページネーション"
+    >
       <Button
         variant="outline"
         size="sm"
         disabled={currentPage === 1}
         asChild={currentPage !== 1}
+        aria-label="前のページ"
       >
         {currentPage === 1 ? (
           <span>前へ</span>
@@ -441,6 +431,8 @@ function Pagination({
           variant={pageNum === currentPage ? 'default' : 'outline'}
           size="sm"
           asChild={pageNum !== currentPage}
+          aria-label={`ページ${pageNum}`}
+          aria-current={pageNum === currentPage ? 'page' : undefined}
         >
           {pageNum === currentPage ? (
             <span>{pageNum}</span>
@@ -455,6 +447,7 @@ function Pagination({
         size="sm"
         disabled={currentPage === totalPages}
         asChild={currentPage !== totalPages}
+        aria-label="次のページ"
       >
         {currentPage === totalPages ? (
           <span>次へ</span>
@@ -462,6 +455,6 @@ function Pagination({
           <Link href={buildPageUrl(currentPage + 1)}>次へ</Link>
         )}
       </Button>
-    </div>
+    </nav>
   );
 }

@@ -212,6 +212,20 @@ gcloud run deploy daily-report \
 | `make deploy`                  | Cloud Runにデプロイ                      |
 | `make deploy-full`             | フルデプロイ（ビルド+プッシュ+デプロイ） |
 
+### 本番環境セットアップコマンド
+
+| コマンド                     | 説明                                          |
+| ---------------------------- | --------------------------------------------- |
+| `make setup-cloudsql`        | Cloud SQLインスタンスを作成                   |
+| `make setup-db`              | データベースとユーザーを作成（要DB_PASSWORD） |
+| `make setup-secrets`         | Secret Managerに環境変数を登録                |
+| `make setup-service-account` | GitHub Actions用サービスアカウントを作成      |
+| `make setup-secret-access`   | Cloud Runにシークレットアクセス権限を付与     |
+| `make setup-monitoring`      | Cloud Logging/Monitoring APIを有効化          |
+| `make create-sa-key`         | サービスアカウントキーを作成                  |
+| `make setup-production`      | 本番環境の一括セットアップ                    |
+| `make verify-setup`          | セットアップ状態を検証                        |
+
 ### 運用コマンド
 
 | コマンド        | 説明                          |
@@ -351,13 +365,79 @@ make describe
 
 ---
 
+## 本番環境セットアップ（クイックスタート）
+
+### 一括セットアップ
+
+環境変数を設定して`make setup-production`を実行すると、本番環境を一括でセットアップできます。
+
+```bash
+# 環境変数を設定
+export DB_PASSWORD="your-secure-password-here"
+export DATABASE_URL="postgresql://daily_report_user:${DB_PASSWORD}@/daily_report?host=/cloudsql/claudecode1-482612:asia-northeast1:daily-report-db"
+export SESSION_SECRET="$(openssl rand -base64 32)"
+
+# 一括セットアップ実行
+make setup-production
+
+# サービスアカウントキーを作成
+make create-sa-key
+
+# セットアップ状態を確認
+make verify-setup
+```
+
+### セットアップ完了後のチェックリスト
+
+- [ ] Cloud SQLインスタンスが起動している
+- [ ] データベースとユーザーが作成されている
+- [ ] Secret ManagerにDATABASE_URLとSESSION_SECRETが登録されている
+- [ ] サービスアカウント（github-actions）が作成されている
+- [ ] Cloud Runにシークレットアクセス権限が付与されている
+- [ ] GitHub SecretsにGCP_SA_KEYが登録されている
+- [ ] Cloud Logging/Monitoring APIが有効化されている
+
+---
+
+## Cloud Monitoring設定
+
+### アラートポリシーの設定
+
+Cloud Consoleでアラートポリシーを設定し、異常を検知できるようにします。
+
+```bash
+# Cloud Monitoring APIを有効化（setup-monitoringで実行済み）
+gcloud services enable monitoring.googleapis.com
+```
+
+#### 推奨アラート設定
+
+1. **エラー率アラート**: Cloud Runの5xx エラー率が5%を超えた場合
+2. **レスポンスタイムアラート**: p95レイテンシが2秒を超えた場合
+3. **CPU使用率アラート**: CPU使用率が80%を超えた場合
+
+### ログの確認
+
+```bash
+# Cloud Runのログを確認
+make logs
+
+# 詳細なログをCloud Consoleで確認
+# https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22
+```
+
+---
+
 ## 参考リンク
 
 - [Cloud Run Documentation](https://cloud.google.com/run/docs)
+- [Cloud SQL Documentation](https://cloud.google.com/sql/docs)
+- [Secret Manager Documentation](https://cloud.google.com/secret-manager/docs)
+- [Cloud Monitoring Documentation](https://cloud.google.com/monitoring/docs)
 - [Next.js Deployment](https://nextjs.org/docs/deployment)
 - [Prisma with Cloud Run](https://www.prisma.io/docs/guides/deployment/deployment-guides/deploying-to-google-cloud-run)
 - [GitHub Actions](https://docs.github.com/actions)
 
 ---
 
-**最終更新**: 2025/01/07
+**最終更新**: 2026/02/01

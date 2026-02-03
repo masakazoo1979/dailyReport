@@ -2,6 +2,34 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * カードコンポーネント
+ *
+ * @description
+ * コンテンツをグループ化して表示するためのコンテナコンポーネント。
+ * CardHeader、CardContent、CardFooter などの子コンポーネントと組み合わせて使用します。
+ * 日報詳細、顧客情報、ダッシュボードのウィジェットなどに使用します。
+ *
+ * @param props - カードのプロパティ
+ * @param props.className - 追加のCSSクラス
+ *
+ * @example
+ * 基本的な使用方法
+ * ```tsx
+ * <Card>
+ *   <CardHeader>
+ *     <CardTitle>日報詳細</CardTitle>
+ *     <CardDescription>2024年1月6日の日報</CardDescription>
+ *   </CardHeader>
+ *   <CardContent>
+ *     コンテンツをここに配置
+ *   </CardContent>
+ *   <CardFooter>
+ *     <Button>保存</Button>
+ *   </CardFooter>
+ * </Card>
+ * ```
+ */
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -15,6 +43,13 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * カードヘッダーコンポーネント
+ *
+ * @description
+ * カードのタイトルや説明を配置するためのヘッダー領域。
+ * CardTitle、CardDescription、CardAction と組み合わせて使用します。
+ */
 function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -28,6 +63,12 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * カードタイトルコンポーネント
+ *
+ * @description
+ * カードの主題を表示するためのタイトル要素。
+ */
 function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -38,6 +79,12 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * カード説明コンポーネント
+ *
+ * @description
+ * カードの補足説明を表示するための要素。
+ */
 function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -48,6 +95,12 @@ function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * カードアクションコンポーネント
+ *
+ * @description
+ * カードヘッダー内にアクションボタンを配置するための要素。
+ */
 function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -61,6 +114,12 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * カードコンテンツコンポーネント
+ *
+ * @description
+ * カードの主要なコンテンツを配置するための領域。
+ */
 function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -71,6 +130,12 @@ function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * カードフッターコンポーネント
+ *
+ * @description
+ * カードの下部にアクションボタンなどを配置するための領域。
+ */
 function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

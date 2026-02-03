@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 import { Button } from '@/components/ui/button';
 import { ReportForm } from '@/components/features/reports/ReportForm';
+import { getCustomerListForSelect } from '@/lib/utils/cache';
 
 /**
  * 日報登録画面 (S-004)
@@ -26,18 +26,8 @@ export default async function NewReportPage() {
   }
 
   try {
-    // 顧客一覧を取得
-    const customers = await prisma.customer.findMany({
-      select: {
-        customerId: true,
-        customerName: true,
-        companyName: true,
-        industry: true,
-      },
-      orderBy: {
-        companyName: 'asc',
-      },
-    });
+    // 顧客一覧を取得（キャッシュ利用で効率化）
+    const customers = await getCustomerListForSelect();
 
     if (customers.length === 0) {
       return (
